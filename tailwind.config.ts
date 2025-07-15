@@ -11,12 +11,6 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Fondazione Alfieri brand colors - solid colors only
-        alfieri: {
-          pink: "#ec4899", // Main pink from logo
-          purple: "#9333ea", // Main purple from logo
-          indigo: "#6366f1", // Main indigo from logo
-        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -51,21 +45,13 @@ const config: Config = {
           foreground: "hsl(var(--card-foreground))",
         },
       },
-      backgroundImage: {
-        "alfieri-gradient": "linear-gradient(135deg, #ec4899 0%, #9333ea 50%, #6366f1 100%)",
-        "alfieri-gradient-soft": "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%)",
-        "alfieri-gradient-reverse": "linear-gradient(315deg, #ec4899 0%, #9333ea 50%, #6366f1 100%)",
-        "alfieri-radial": "radial-gradient(ellipse at center, #ec4899 0%, #9333ea 50%, #6366f1 100%)",
-      },
       animation: {
         "fade-in": "fadeIn 0.5s ease-in-out",
         "slide-up": "slideUp 0.3s ease-out",
         "slide-down": "slideDown 0.3s ease-out",
         "scale-in": "scaleIn 0.2s ease-out",
         "pulse-soft": "pulseSoft 2s ease-in-out infinite",
-        "gradient-x": "gradientX 3s ease infinite",
         float: "float 3s ease-in-out infinite",
-        glow: "glow 2s ease-in-out infinite alternate",
       },
       keyframes: {
         fadeIn: {
@@ -88,17 +74,9 @@ const config: Config = {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.8" },
         },
-        gradientX: {
-          "0%, 100%": { "background-position": "0% 50%" },
-          "50%": { "background-position": "100% 50%" },
-        },
         float: {
           "0%, 100%": { transform: "translateY(0px)" },
           "50%": { transform: "translateY(-10px)" },
-        },
-        glow: {
-          "0%": { "box-shadow": "0 0 5px rgba(236, 72, 153, 0.5)" },
-          "100%": { "box-shadow": "0 0 20px rgba(236, 72, 153, 0.8)" },
         },
       },
       borderRadius: {

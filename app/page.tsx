@@ -306,13 +306,13 @@ export default function Dashboard() {
 
                   <div className="flex gap-3 pt-2">
                     <Link href={`/patient/${patient.id}`} className="flex-1">
-                      <Button variant="outline" size="sm" className="w-full btn-alfieri-outline bg-transparent">
+                      <Button variant="outline" size="sm" className="w-full bg-transparent">
                         <FileText className="h-4 w-4 mr-2" />
                         Visualizza
                       </Button>
                     </Link>
                     <Link href={`/upload?patient_id=${patient.id}`} className="flex-1">
-                      <Button size="sm" className="w-full bg-alfieri-gradient hover:opacity-90 hover-lift">
+                      <Button size="sm" className="w-full">
                         <Plus className="h-4 w-4 mr-2" />
                         Aggiungi
                       </Button>

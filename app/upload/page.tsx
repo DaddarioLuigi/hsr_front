@@ -242,10 +242,10 @@ export default function UploadPage() {
                   <div
                     className={`border-3 border-dashed rounded-xl p-12 text-center transition-all duration-300 ${
                       dragActive
-                        ? "border-alfieri-pink bg-pink-50 scale-105"
+                        ? "border-black bg-gray-100 scale-105"
                         : selectedFile
-                          ? "border-green-500 bg-green-50"
-                          : "border-gray-300 glass hover:border-alfieri-pink hover:bg-pink-50"
+                          ? "border-black bg-gray-100"
+                          : "border-gray-300 glass hover:border-black hover:bg-gray-100"
                     }`}
                     onDragEnter={handleDrag}
                     onDragLeave={handleDrag}
