@@ -5,9 +5,10 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const file = formData.get("file") as File
     const patientId = formData.get("patient_id") as string
-    const documentType = formData.get("document_type") as string
+    //const documentType = formData.get("document_type") as string // Removed
 
-    if (!file || !patientId || !documentType) {
+    if (!file || !patientId) {
+      // Updated condition
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
@@ -20,7 +21,8 @@ export async function POST(request: NextRequest) {
     const mockResponse = {
       document_id: `doc_${Date.now()}`,
       patient_id: patientId,
-      document_type: documentType,
+      // Il tipo di documento viene ora determinato automaticamente dal backend
+      document_type: "lettera_dimissione",
       filename: file.name,
       entities: [
         {

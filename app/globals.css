@@ -4,62 +4,45 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%; /* white */
-    --foreground: 0 0% 3.9%; /* black */
-
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 3.9%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-
-    --primary: 0 0% 3.9%; /* black */
-    --primary-foreground: 0 0% 98%; /* white */
-
-    --secondary: 0 0% 96.1%; /* light gray */
-    --secondary-foreground: 0 0% 9%; /* black */
-
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
     --muted: 0 0% 96.1%;
     --muted-foreground: 0 0% 45.1%;
-
     --accent: 0 0% 96.1%;
     --accent-foreground: 0 0% 9%;
-
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
     --ring: 0 0% 3.9%;
-
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 0 0% 3.9%; /* black */
-    --foreground: 0 0% 98%; /* white */
-
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
     --card: 0 0% 3.9%;
     --card-foreground: 0 0% 98%;
-
     --popover: 0 0% 3.9%;
     --popover-foreground: 0 0% 98%;
-
-    --primary: 0 0% 98%; /* white */
-    --primary-foreground: 0 0% 9%; /* black */
-
-    --secondary: 0 0% 14.9%; /* dark gray */
-    --secondary-foreground: 0 0% 98%; /* white */
-
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 14.9%;
     --muted-foreground: 0 0% 63.9%;
-
     --accent: 0 0% 14.9%;
     --accent-foreground: 0 0% 98%;
-
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-
     --border: 0 0% 14.9%;
     --input: 0 0% 14.9%;
     --ring: 0 0% 83.1%;
@@ -76,133 +59,12 @@
   }
 }
 
-@layer components {
-  /* Custom scrollbar — unchanged */
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 8px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-track {
-    @apply bg-gray-100 rounded-full;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-gray-400 rounded-full hover:bg-gray-500;
-    transition: background-color 0.2s ease;
-  }
-
-  /* Glassmorphism effect — kept for light/dark modes */
-  .glass {
-    @apply bg-white/80 backdrop-blur-sm border border-white/20 dark:bg-black/60 dark:border-black/30;
-  }
-  .glass-dark {
-    @apply bg-black/80 backdrop-blur-sm border border-black/30;
-  }
-
-  /* Buttons (solid & outline) */
-  .btn-alfieri {
-    /* Now simply a solid black button */
-    @apply bg-black text-white font-medium px-6 py-3 rounded-lg shadow hover:bg-white hover:text-black hover:shadow-lg transform hover:scale-105 transition-all duration-200 ease-out border border-black;
-  }
-  .btn-alfieri-outline {
-    /* Outline variant: white background, black border */
-    @apply border-2 border-black text-black font-medium px-6 py-3 rounded-lg hover:bg-black hover:text-white transition-all duration-200 ease-out;
-  }
-
-  /* Cards */
-  .card-alfieri {
-    @apply bg-white dark:bg-black text-black dark:text-white rounded-xl shadow hover:shadow-lg transition-all duration-300 ease-out hover:scale-[1.02];
-  }
-
-  /* Text utility (now just inherits current color) */
-  .text-alfieri-gradient {
-    @apply text-black dark:text-white;
-  }
-
-  /* Loading spinner */
-  .spinner-alfieri {
-    /* Uses black for the animated segment */
-    @apply w-8 h-8 border-4 border-gray-200 border-t-black rounded-full animate-spin;
-  }
-}
-
-@layer utilities {
-  /* Animation utilities */
-  .animate-fade-in-up {
-    animation: fadeInUp 0.6s ease-out;
-  }
-
-  .animate-fade-in-down {
-    animation: fadeInDown 0.6s ease-out;
-  }
-
-  .animate-slide-in-left {
-    animation: slideInLeft 0.5s ease-out;
-  }
-
-  .animate-slide-in-right {
-    animation: slideInRight 0.5s ease-out;
-  }
-
-  /* Hover effects */
-  .hover-lift {
-    @apply transition-transform duration-200 ease-out hover:scale-105 hover:shadow-lg;
-  }
-
-  .hover-glow {
-    @apply transition-all duration-300 ease-out hover:shadow-lg hover:shadow-black/25 dark:hover:shadow-white/25;
-  }
-}
-
-/* Enhanced keyframes */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
 /* Global smooth transitions */
 * {
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow,
     transform, filter, backdrop-filter;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 200ms;
+  transition-duration: 150ms;
 }
 
 /* Focus styles */
@@ -212,9 +74,5 @@
 
 /* Selection styles */
 ::selection {
-  @apply bg-gray-300 text-black;
-}
-
-.dark ::selection {
-  @apply bg-gray-700 text-white;
+  @apply bg-accent text-accent-foreground;
 }
