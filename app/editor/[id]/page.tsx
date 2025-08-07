@@ -2,20 +2,16 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { ArrowLeft, Save, Edit3, FileText, Plus, Trash2, Loader2 } from "lucide-react"
+import Link from "next/link"
+import { ArrowLeft, Save, Download, Edit3, Plus, Trash2, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
-import { Document, Page, pdfjs } from "react-pdf"
-import "react-pdf/dist/Page/AnnotationLayer.css"
-import "react-pdf/dist/Page/TextLayer.css"
 import { HospitalHeader } from "@/components/hospital-header"
-
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`
+import { fetchDocumentDetail, updateDocumentEntities } from "@/lib/api"
 
 interface Entity {
   id: string
@@ -29,7 +25,8 @@ interface DocumentData {
   patient_id: string
   document_type: string
   filename: string
-  pdf_path: string
+  pdf_path?: string
+  pdfPath?: string
   entities: Entity[]
 }
 
@@ -42,81 +39,88 @@ export default function EditorPage() {
   const [entities, setEntities] = useState<Entity[]>([])
   const [editingEntity, setEditingEntity] = useState<{ id: string; type: string; value: string } | null>(null)
   const [saving, setSaving] = useState(false)
-  const [numPages, setNumPages] = useState<number>(0)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
+  // Compute PDF URL
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5050"
+  const docPath = documentData?.pdf_path ?? documentData?.pdfPath
+  const pdfUrl = docPath ? `${API_BASE}${docPath}` : undefined
+
+  // Load document data
   useEffect(() => {
-    const fetchDocumentData = async () => {
-      // Mock data for demo
-      const mockData: DocumentData = {
-        id: documentId,
-        patient_id: "001",
-        document_type: "lettera_dimissione",
-        filename: "dimissione_mario_rossi.pdf",
-        pdf_path: "/placeholder.pdf",
-        entities: [
-          { id: "1", type: "Paziente", value: "Mario Rossi", confidence: 0.95 },
-          { id: "2", type: "Data Nascita", value: "15/03/1975", confidence: 0.88 },
-          { id: "3", type: "Diagnosi Principale", value: "Infarto miocardico acuto", confidence: 0.92 },
-          { id: "4", type: "Terapia", value: "Aspirina 100mg, Atorvastatina 20mg", confidence: 0.85 },
-          { id: "5", type: "Data Dimissione", value: "20/01/2024", confidence: 0.98 },
-        ],
+    const load = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const data = await fetchDocumentDetail(documentId)
+        setDocumentData(data)
+        setEntities(data.entities)
+      } catch (err: any) {
+        setError(err.message || "Errore caricamento documento")
+      } finally {
+        setLoading(false)
       }
-      setDocumentData(mockData)
-      setEntities(mockData.entities)
     }
-    fetchDocumentData()
+    if (documentId) load()
   }, [documentId])
 
-  const handleStartEdit = (entity: Entity) => {
-    setEditingEntity({ id: entity.id, type: entity.type, value: entity.value })
-  }
-
-  const handleCancelEdit = () => {
-    setEditingEntity(null)
-  }
-
+  // Handlers...
+  const handleStartEdit = (e: Entity) =>
+    setEditingEntity({ id: e.id, type: e.type, value: e.value })
+  const handleCancelEdit = () => setEditingEntity(null)
   const handleConfirmEdit = () => {
     if (!editingEntity) return
-    setEntities((prev) =>
-      prev.map((entity) =>
-        entity.id === editingEntity.id ? { ...entity, type: editingEntity.type, value: editingEntity.value } : entity,
-      ),
+    setEntities(prev =>
+      prev.map(ent =>
+        ent.id === editingEntity.id
+          ? { ...ent, type: editingEntity.type, value: editingEntity.value }
+          : ent
+      )
     )
     setEditingEntity(null)
   }
-
   const handleAddEntity = () => {
-    const newEntity: Entity = {
-      id: Date.now().toString(),
-      type: "Nuova Entità",
-      value: "",
-      confidence: 1.0,
-    }
-    setEntities((prev) => [...prev, newEntity])
-    handleStartEdit(newEntity)
+    const newEnt: Entity = { id: Date.now().toString(), type: "Nuova Entità", value: "", confidence: 1.0 }
+    setEntities(prev => [...prev, newEnt])
+    handleStartEdit(newEnt)
   }
-
-  const handleDeleteEntity = (entityId: string) => {
-    setEntities((prev) => prev.filter((entity) => entity.id !== entityId))
-  }
+  const handleDeleteEntity = (id: string) => setEntities(prev => prev.filter(e => e.id !== id))
 
   const handleSave = async () => {
     setSaving(true)
+    setError(null)
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000)) // Simulate API call
-      console.log("Saving data:", { document_id: documentId, entities })
+      await updateDocumentEntities(documentId, entities)
       router.push("/")
-    } catch (error) {
-      console.error("Save error:", error)
+    } catch (err: any) {
+      setError(err.message || "Errore salvataggio entità")
     } finally {
       setSaving(false)
     }
   }
 
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 0.9) return "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
-    if (confidence >= 0.7) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300"
-    return "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
+  const getConfidenceColor = (c: number) =>
+    c >= 0.9
+      ? "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
+      : c >= 0.7
+      ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300"
+      : "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-secondary flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-secondary flex items-center justify-center">
+        <span className="text-lg text-red-600">{error}</span>
+      </div>
+    )
   }
 
   if (!documentData) {
@@ -138,118 +142,77 @@ export default function EditorPage() {
       >
         <div className="flex items-center justify-between mb-8">
           <div>
-            <Link
-              href="/"
-              className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors mb-2"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Torna alla Dashboard
+            <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors mb-2">
+              <ArrowLeft className="h-4 w-4 mr-2" /> Torna alla Dashboard
             </Link>
             <h1 className="text-3xl font-bold">Editor Entità</h1>
             <p className="text-muted-foreground">{documentData.filename}</p>
           </div>
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-            Salva Modifiche
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Salva Modifiche
+            </Button>
+            {pdfUrl && (
+              <Button asChild variant="outline" size="sm">
+                <a href={pdfUrl} download>
+                  <Download className="mr-2 h-4 w-4" />Scarica
+                </a>
+              </Button>
+            )}
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <Card>
-            <CardHeader>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
               <CardTitle className="flex items-center">
-                <FileText className="h-5 w-5 mr-2" />
-                Documento PDF
+                <Edit3 className="h-5 w-5 mr-2" /> Entità Estratte
               </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="border rounded-lg overflow-auto max-h-[70vh]">
-                <Document file={documentData.pdf_path} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
-                  {Array.from(new Array(numPages), (el, index) => (
-                    <Page key={`page_${index + 1}`} pageNumber={index + 1} />
-                  ))}
-                </Document>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center">
-                  <Edit3 className="h-5 w-5 mr-2" />
-                  Entità Estratte
-                </CardTitle>
-                <Button onClick={handleAddEntity} variant="outline" size="sm">
-                  <Plus className="h-4 w-4 mr-1" />
-                  Aggiungi
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-2">
-                <AnimatePresence>
-                  {entities.map((entity) => (
-                    <motion.div
-                      key={entity.id}
-                      layout
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="p-3 border rounded-lg"
-                    >
-                      {editingEntity?.id === entity.id ? (
-                        <div className="space-y-2">
-                          <Input
-                            placeholder="Tipo entità"
-                            value={editingEntity.type}
-                            onChange={(e) => setEditingEntity({ ...editingEntity, type: e.target.value })}
-                          />
-                          <Input
-                            placeholder="Valore"
-                            value={editingEntity.value}
-                            onChange={(e) => setEditingEntity({ ...editingEntity, value: e.target.value })}
-                          />
-                          <div className="flex justify-end gap-2 pt-2">
-                            <Button variant="ghost" size="sm" onClick={handleCancelEdit}>
-                              Annulla
-                            </Button>
-                            <Button size="sm" onClick={handleConfirmEdit}>
-                              Conferma
-                            </Button>
-                          </div>
+              <Button onClick={handleAddEntity} variant="outline" size="sm">
+                <Plus className="h-4 w-4 mr-1" /> Aggiungi
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-2">
+              <AnimatePresence>
+                {entities.map(ent => (
+                  <motion.div
+                    key={ent.id}
+                    layout
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="p-3 border rounded-lg"
+                  >
+                    {editingEntity?.id === ent.id ? (
+                      <>
+                        <Input placeholder="Tipo entità" value={editingEntity.type} onChange={e => setEditingEntity({ ...editingEntity, type: e.target.value })} />
+                        <Input placeholder="Valore" value={editingEntity.value} onChange={e => setEditingEntity({ ...editingEntity, value: e.target.value })} />
+                        <div className="flex justify-end gap-2 pt-2">
+                          <Button variant="ghost" size="sm" onClick={handleCancelEdit}>Annulla</Button>
+                          <Button size="sm" onClick={handleConfirmEdit}>Conferma</Button>
                         </div>
-                      ) : (
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <Label className="font-medium">{entity.type}</Label>
-                            <p className="text-muted-foreground">{entity.value || "N/A"}</p>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Badge variant="secondary" className={getConfidenceColor(entity.confidence)}>
-                              {Math.round(entity.confidence * 100)}%
-                            </Badge>
-                            <Button size="icon" variant="ghost" onClick={() => handleStartEdit(entity)}>
-                              <Edit3 className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="text-destructive"
-                              onClick={() => handleDeleteEntity(entity.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label className="font-medium">{ent.type}</Label>
+                          <p className="text-muted-foreground">{ent.value || "N/A"}</p>
                         </div>
-                      )}
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                        <div className="flex items-center gap-1">
+                          <Badge variant="secondary" className={getConfidenceColor(ent.confidence)}>{Math.round(ent.confidence * 100)}%</Badge>
+                          <Button size="icon" variant="ghost" onClick={() => handleStartEdit(ent)}><Edit3 className="h-4 w-4" /></Button>
+                          <Button size="icon" variant="ghost" className="text-destructive" onClick={() => handleDeleteEntity(ent.id)}><Trash2 className="h-4 w-4" /></Button>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </CardContent>
+        </Card>
       </motion.div>
     </div>
   )

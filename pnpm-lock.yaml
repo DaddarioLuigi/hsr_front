@@ -128,6 +128,9 @@ importers:
       next-themes:
         specifier: latest
         version: 0.4.6(react-dom@18.0.0(react@18.0.0))(react@18.0.0)
+      pdfjs-dist:
+        specifier: ^5.3.93
+        version: 5.3.93
       react:
         specifier: ^18
         version: 18.0.0
@@ -1512,6 +1515,10 @@ packages:
 
   pdfjs-dist@5.3.31:
     resolution: {integrity: sha512-EhPdIjNX0fcdwYQO+e3BAAJPXt+XI29TZWC7COhIXs/K0JHcUt1Gdz1ITpebTwVMFiLsukdUZ3u0oTO7jij+VA==}
+    engines: {node: '>=20.16.0 || >=22.3.0'}
+
+  pdfjs-dist@5.3.93:
+    resolution: {integrity: sha512-w3fQKVL1oGn8FRyx5JUG5tnbblggDqyx2XzA5brsJ5hSuS+I0NdnJANhmeWKLjotdbPQucLBug5t0MeWr0AAdg==}
     engines: {node: '>=20.16.0 || >=22.3.0'}
 
   picocolors@1.1.1:
@@ -3147,6 +3154,10 @@ snapshots:
       minipass: 7.1.2
 
   pdfjs-dist@5.3.31:
+    optionalDependencies:
+      '@napi-rs/canvas': 0.1.73
+
+  pdfjs-dist@5.3.93:
     optionalDependencies:
       '@napi-rs/canvas': 0.1.73
 

@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { motion } from "framer-motion"
+import { fetchPatientDetail } from "@/lib/api"
+import { getDocumentId } from "@/lib/utils";
 
 interface Document {
   id: string
@@ -30,52 +32,23 @@ export default function PatientPage() {
 
   const [patientData, setPatientData] = useState<PatientData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchPatientData()
-  }, [patientId])
-
-  const fetchPatientData = async () => {
-    try {
-      // Mock data for demo
-      const mockData: PatientData = {
-        id: patientId,
-        name: "Mario Rossi",
-        documents: [
-          {
-            id: "1",
-            filename: "dimissione_2024_01_20.pdf",
-            document_type: "lettera_dimissione",
-            upload_date: "2024-01-20",
-            entities_count: 5,
-            status: "processed",
-          },
-          {
-            id: "2",
-            filename: "laboratorio_2024_01_15.pdf",
-            document_type: "referto_laboratorio",
-            upload_date: "2024-01-15",
-            entities_count: 8,
-            status: "processed",
-          },
-          {
-            id: "3",
-            filename: "visita_cardiologica_2024_01_10.pdf",
-            document_type: "visita_specialistica",
-            upload_date: "2024-01-10",
-            entities_count: 6,
-            status: "processed",
-          },
-        ],
+    const loadPatient = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const data = await fetchPatientDetail(patientId)
+        setPatientData(data)
+      } catch (err: any) {
+        setError(err.message || "Errore caricamento paziente")
+      } finally {
+        setLoading(false)
       }
-
-      setPatientData(mockData)
-    } catch (error) {
-      console.error("Error fetching patient data:", error)
-    } finally {
-      setLoading(false)
     }
-  }
+    if (patientId) loadPatient()
+  }, [patientId])
 
   const getDocumentTypeLabel = (type: string) => {
     const types: Record<string, string> = {
@@ -104,11 +77,20 @@ export default function PatientPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-alfieri-gradient-light flex items-center justify-center">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-          className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full"
-        />
+        <span className="text-lg">Caricamento paziente...</span>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-alfieri-gradient-light flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{error}</h2>
+          <Link href="/">
+            <Button>Torna alla Dashboard</Button>
+          </Link>
+        </div>
       </div>
     )
   }
@@ -157,7 +139,7 @@ export default function PatientPage() {
               </p>
             </div>
             <Link href={`/upload?patient_id=${patientData.id}`}>
-              <Button className="bg-alfieri-gradient hover:opacity-90">
+              <Button className="bg-black text-white hover:bg-neutral-800">
                 <Plus className="mr-2 h-4 w-4" />
                 Aggiungi Documento
               </Button>
@@ -201,16 +183,13 @@ export default function PatientPage() {
                     </div>
 
                     <div className="flex items-center space-x-2">
-                      <Link href={`/editor/${document.id}`}>
+                      <Link href={`/editor/${getDocumentId(patientData.id, document.document_type, document.filename)}`}>
                         <Button variant="outline" size="sm">
                           <Eye className="h-4 w-4 mr-1" />
                           Visualizza
                         </Button>
                       </Link>
-                      <Button variant="outline" size="sm">
-                        <Download className="h-4 w-4 mr-1" />
-                        Scarica
-                      </Button>
+
                     </div>
                   </div>
                 </CardContent>

@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { HospitalHeader } from "@/components/hospital-header"
+import { fetchPatients } from "@/lib/api"
+import { exportExcel } from "@/lib/api"
 
 interface Patient {
   id: string
@@ -19,19 +21,55 @@ interface Patient {
 export default function DashboardPage() {
   const [patients, setPatients] = useState<Patient[]>([])
   const [searchTerm, setSearchTerm] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleExport = async () => {
+    try {
+      const blob = await exportExcel()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = "dati_clinici.xlsx"
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (err: any) {
+      console.error(err)
+      alert(err.message || "Errore durante l'esportazione Excel")
+    }
+  }  
 
   useEffect(() => {
-    const fetchPatients = async () => {
-      // Mock data for demonstration
-      const mockPatients: Patient[] = [
-        { id: "001", name: "Mario Rossi", last_document_date: "2024-07-15", document_count: 5 },
-        { id: "002", name: "Luigi Verdi", last_document_date: "2024-07-12", document_count: 3 },
-        { id: "003", name: "Anna Bianchi", last_document_date: "2024-06-28", document_count: 8 },
-      ]
-      setPatients(mockPatients)
+    const loadPatients = async () => {
+      try {
+        const data = await fetchPatients()
+        setPatients(data)
+      } catch (err: any) {
+        setError(err.message || "Errore caricamento pazienti")
+      } finally {
+        setLoading(false)
+      }
     }
-    fetchPatients()
+    loadPatients()
   }, [])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black">
+        <span className="text-lg">Caricamento pazienti...</span>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black">
+        <span className="text-lg text-red-600">{error}</span>
+      </div>
+    )
+  }
 
   const filteredPatients = patients.filter((patient) => patient.name.toLowerCase().includes(searchTerm.toLowerCase()))
 
@@ -69,6 +107,10 @@ export default function DashboardPage() {
                 Carica Documento
               </Button>
             </Link>
+            <Button onClick={handleExport}>
+              <FileStack className="h-4 w-4 mr-2" />
+              Esporta Excel
+            </Button>
           </div>
 
           <motion.div

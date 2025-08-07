@@ -12,6 +12,8 @@ import { Progress } from "@/components/ui/progress"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { HospitalHeader } from "@/components/hospital-header"
+import { uploadDocument } from "@/lib/api"
+import { getDocumentId } from "@/lib/utils";
 
 export default function UploadPage() {
   const router = useRouter()
@@ -71,19 +73,7 @@ export default function UploadPage() {
     for (let i = 0; i < totalFiles; i++) {
       const file = selectedFiles[i]
       try {
-        const formData = new FormData()
-        formData.append("file", file)
-        formData.append("patient_id", patientId)
-
-        const response = await fetch("/api/upload-document", {
-          method: "POST",
-          body: formData,
-        })
-
-        if (!response.ok) {
-          throw new Error(`Failed to upload ${file.name}`)
-        }
-
+        await uploadDocument(file, patientId)
         setUploadProgress(((i + 1) / totalFiles) * 100)
       } catch (error) {
         console.error("Upload error:", error)
