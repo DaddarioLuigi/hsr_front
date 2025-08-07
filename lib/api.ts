@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:5050";
+const BASE_URL = "clinicalaiclinicalfolders-production.up.railway.app:8080";
 
 // Lista pazienti
 export async function fetchPatients() {
