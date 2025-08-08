@@ -62,3 +62,14 @@ export async function exportExcel() {
   if (!res.ok) throw new Error("Errore export Excel");
   return res.blob();
 }
+
+// Elimina documento
+export async function deleteDocument(documentId: string) {
+  const r = await fetch(`${BASE_URL}/api/document/${encodeURIComponent(documentId)}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  const data = await r.json();
+  if (!r.ok || !data.success) throw new Error(data.error || "Delete failed");
+  return data as { success: true; patient_deleted: boolean; document_type_deleted: boolean };
+}

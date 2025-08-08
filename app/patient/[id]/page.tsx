@@ -1,14 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
-import { ArrowLeft, FileText, Calendar, Download, Eye, Plus } from "lucide-react"
+import { useParams, useRouter } from "next/navigation"
+import { ArrowLeft, FileText, Calendar, Download, Eye, Plus, Trash } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { fetchPatientDetail } from "@/lib/api"
+import { fetchPatientDetail, deleteDocument } from "@/lib/api"
 import { getDocumentId } from "@/lib/utils";
 
 interface Document {
@@ -28,26 +28,29 @@ interface PatientData {
 
 export default function PatientPage() {
   const params = useParams()
+  const router = useRouter()
   const patientId = params.id as string
 
   const [patientData, setPatientData] = useState<PatientData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const loadPatient = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await fetchPatientDetail(patientId)
+      setPatientData(data)
+    } catch (err: any) {
+      setError(err.message || "Errore caricamento paziente")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const loadPatient = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const data = await fetchPatientDetail(patientId)
-        setPatientData(data)
-      } catch (err: any) {
-        setError(err.message || "Errore caricamento paziente")
-      } finally {
-        setLoading(false)
-      }
-    }
-    if (patientId) loadPatient()
+    if (patientId) void loadPatient()
   }, [patientId])
 
   const getDocumentTypeLabel = (type: string) => {
@@ -71,6 +74,24 @@ export default function PatientPage() {
         return <Badge className="bg-red-100 text-red-800">Errore</Badge>
       default:
         return <Badge variant="secondary">{status}</Badge>
+    }
+  }
+
+  const handleDelete = async (documentId: string) => {
+    const confirmed = window.confirm("Sei sicuro di voler eliminare questo documento? L'azione è irreversibile.")
+    if (!confirmed) return
+    try {
+      setDeletingId(documentId)
+      const res = await deleteDocument(documentId)
+      if (res.patient_deleted) {
+        router.push("/")
+      } else {
+        await loadPatient()
+      }
+    } catch (e: any) {
+      alert(e.message || "Errore durante l'eliminazione")
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -189,7 +210,17 @@ export default function PatientPage() {
                           Visualizza
                         </Button>
                       </Link>
-
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(document.id)}
+                        disabled={deletingId === document.id}
+                        aria-disabled={deletingId === document.id}
+                        title="Elimina documento"
+                      >
+                        <Trash className="h-4 w-4 mr-1" />
+                        {deletingId === document.id ? "Eliminazione..." : "Elimina"}
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
