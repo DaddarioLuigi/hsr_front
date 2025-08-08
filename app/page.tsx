@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { HospitalHeader } from "@/components/hospital-header"
-import { fetchPatients } from "@/lib/api"
-import { exportExcel } from "@/lib/api"
+import { fetchPatients, exportExcel, fetchPatientDetail } from "@/lib/api"
+import { startOfWeek } from "date-fns"
 
 interface Patient {
   id: string
@@ -23,6 +23,8 @@ export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [recentDocsThisWeek, setRecentDocsThisWeek] = useState<number>(0)
+  const [recentLoading, setRecentLoading] = useState<boolean>(true)
 
   const handleExport = async () => {
     try {
@@ -39,7 +41,7 @@ export default function DashboardPage() {
       console.error(err)
       alert(err.message || "Errore durante l'esportazione Excel")
     }
-  }  
+  }
 
   useEffect(() => {
     const loadPatients = async () => {
@@ -54,6 +56,38 @@ export default function DashboardPage() {
     }
     loadPatients()
   }, [])
+
+  useEffect(() => {
+    const computeRecentDocs = async () => {
+      if (loading) return
+      if (patients.length === 0) {
+        setRecentDocsThisWeek(0)
+        setRecentLoading(false)
+        return
+      }
+
+      setRecentLoading(true)
+      try {
+        const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 })
+        const details = await Promise.all(
+          patients.map((p) => fetchPatientDetail(p.id))
+        )
+        const count = details.reduce((acc: number, pd: any) => {
+          const docs = (pd?.documents ?? []) as Array<{ upload_date: string }>
+          const num = docs.filter((d) => new Date(d.upload_date) >= weekStart).length
+          return acc + num
+        }, 0)
+        setRecentDocsThisWeek(count)
+      } catch (err) {
+        console.error("Errore calcolo documenti recenti", err)
+        setRecentDocsThisWeek(0)
+      } finally {
+        setRecentLoading(false)
+      }
+    }
+
+    computeRecentDocs()
+  }, [patients, loading])
 
   if (loading) {
     return (
@@ -150,7 +184,7 @@ export default function DashboardPage() {
                   <Clock className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">+3</div>
+                  <div className="text-2xl font-bold">{recentLoading ? "—" : `+${recentDocsThisWeek}`}</div>
                   <p className="text-xs text-muted-foreground">Documenti caricati questa settimana</p>
                 </CardContent>
               </Card>
