@@ -74,20 +74,64 @@ export async function deleteDocument(documentId: string) {
   return data as { success: true; patient_deleted: boolean; document_type_deleted: boolean };
 }
 
-// Upload pacchetto (PDF unico) con OCR+estrazione
-export async function uploadPacketOCR(file: File, patientId: string) {
+// Upload pacchetto (PDF unico) con OCR+estrazione — ASYNC
+export async function uploadPacketOCR(file: File, patientId?: string) {
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("patient_id", patientId);
+  if (patientId) formData.append("patient_id", patientId);
 
   const res = await fetch(`${BASE_URL}/api/upload-packet-ocr`, {
     method: "POST",
     body: formData,
     credentials: "include",
   });
-  if (!res.ok) {
-    const t = await res.text().catch(() => "");
-    throw new Error(t || "Errore upload pacchetto OCR");
+  if (!res.ok) throw new Error((await res.text().catch(() => "")) || "Errore upload pacchetto OCR");
+  return res.json() as Promise<{ status: "processing"; pending_id?: string; patient_id?: string }>;
+}
+
+// Upload pacchetto (PDF unico) con OCR+estrazione — SYNC (ritorna subito patient_id finale)
+export async function ingestPacketOCRSync(file: File, patientId?: string) {
+  const formData = new FormData();
+  formData.append("file", file);
+  if (patientId) formData.append("patient_id", patientId);
+
+  const res = await fetch(`${BASE_URL}/api/ingest-packet-ocr-sync`, {
+    method: "POST",
+    body: formData,
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error((await res.text().catch(() => "")) || "Errore ingest OCR (sync)");
+  return res.json() as Promise<{
+    patient_id: string;
+    sections_found: string[];
+    documents_processed: string[];
+    global_map: Record<string, any>;
+  }>;
+}
+
+// Utility: conta documenti correnti del paziente
+export async function getPatientDocumentCount(patientId: string): Promise<number> {
+  const detail = await fetchPatientDetail(patientId);
+  const docs = (detail?.documents ?? []) as Array<unknown>;
+  return docs.length;
+}
+
+// Utility: polling fino a quando compaiono nuovi documenti
+export async function pollPatientForNewDocs(
+  patientId: string,
+  baselineCount: number,
+  opts: { intervalMs?: number; timeoutMs?: number } = {},
+): Promise<boolean> {
+  const { intervalMs = 2000, timeoutMs = 120000 } = opts;
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    try {
+      const n = await getPatientDocumentCount(patientId);
+      if (n > baselineCount) return true;
+    } catch {
+      // ignora errori transitori
+    }
+    await new Promise((r) => setTimeout(r, intervalMs));
   }
-  return res.json(); // { status: "processing", patient_id, ... }
+  return false;
 }

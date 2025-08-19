@@ -1,13 +1,13 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { uploadPacketOCR, fetchPatientDetail, fetchPatients } from "@/lib/api";
+import { ingestPacketOCRSync, fetchPatients } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
-import { Upload, FileText } from "lucide-react";
+import { Upload } from "lucide-react";
 
 export default function UploadPacketPage() {
   const router = useRouter();
@@ -17,72 +17,32 @@ export default function UploadPacketPage() {
   const [patientId, setPatientId] = useState(prefillPatientId);
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [processing, setProcessing] = useState(false);
-  const [pollPct, setPollPct] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const baselineDocCount = useRef<number | null>(null);
-  const pollTimer = useRef<any>(null);
 
-  // opzionale: lista pazienti per aiutare l’inserimento
+  // opzionale: mostra qualche ID paziente esistente come hint
   const [patients, setPatients] = useState<{ id: string; name: string }[]>([]);
   useEffect(() => {
-    fetchPatients().then((list: any[]) => {
-      setPatients(list.map(p => ({ id: p.id, name: p.name })));
-    }).catch(() => {});
+    fetchPatients()
+      .then((list: any[]) => setPatients(list.map((p) => ({ id: p.id, name: p.name }))))
+      .catch(() => {});
   }, []);
-
-  async function readDocCount(pid: string) {
-    const detail = await fetchPatientDetail(pid);
-    const docs = (detail?.documents ?? []) as Array<{ upload_date: string }>;
-    return docs.length;
-  }
 
   async function handleSubmit() {
     setError(null);
-    if (!patientId) return setError("Inserisci un ID paziente");
     if (!file) return setError("Seleziona un PDF unico della cartella clinica");
     if (!file.name.toLowerCase().endsWith(".pdf")) return setError("Il file deve essere un PDF");
 
     setSubmitting(true);
     try {
-      // 1) baseline documenti
-      baselineDocCount.current = await readDocCount(patientId);
-
-      // 2) avvia OCR+estrazione
-      const resp = await uploadPacketOCR(file, patientId); // { status: "processing" }
-      setProcessing(true);
-
-      // 3) polling semplice: controlla quando compaiono nuovi documenti
-      let ticks = 0;
-      pollTimer.current = setInterval(async () => {
-        try {
-          ticks += 1;
-          // animazione/progress finto ma informativo
-          setPollPct(p => Math.min(95, p + 2));
-
-          const curr = await readDocCount(patientId);
-          if (baselineDocCount.current != null && curr > baselineDocCount.current) {
-            clearInterval(pollTimer.current);
-            setPollPct(100);
-            router.push(`/patient/${patientId}?msg=estrazione_completata`);
-          }
-          // opzionale: timeout polling dopo ~2 min
-          if (ticks > 60) {
-            clearInterval(pollTimer.current);
-            router.push(`/patient/${patientId}?msg=estrazione_avviata`);
-          }
-        } catch {
-          // ignora errori transitori
-        }
-      }, 2000);
+      // patientId è opzionale: se vuoto verrà ricavato da n_cartella della lettera di dimissione
+      const summary = await ingestPacketOCRSync(file, patientId || undefined);
+      router.push(`/patient/${summary.patient_id}?msg=estrazione_completata`);
     } catch (e: any) {
-      setError(e.message || "Errore durante l’upload OCR");
+      setError(e.message || "Errore durante l’upload/estrazione");
     } finally {
       setSubmitting(false);
     }
   }
-
-  useEffect(() => () => pollTimer.current && clearInterval(pollTimer.current), []);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -95,17 +55,16 @@ export default function UploadPacketPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="patientId">ID Paziente</Label>
+            <Label htmlFor="patientId">ID Paziente (opzionale)</Label>
             <Input
               id="patientId"
-              placeholder="Es. 2025-0001"
+              placeholder="Es. 2025-0001 (oppure lascia vuoto)"
               value={patientId}
               onChange={(e) => setPatientId(e.target.value)}
             />
-            {/* Se vuoi: pick rapido */}
             {patients.length > 0 && (
               <div className="text-xs text-muted-foreground">
-                Esempi: {patients.slice(0,3).map(p => p.id).join(", ")}…
+                Esempi: {patients.slice(0, 3).map((p) => p.id).join(", ")}…
               </div>
             )}
           </div>
@@ -123,24 +82,14 @@ export default function UploadPacketPage() {
           {error && <div className="text-sm text-red-600">{error}</div>}
 
           <div className="flex gap-3">
-            <Button disabled={submitting || processing} onClick={handleSubmit}>
+            <Button disabled={submitting} onClick={handleSubmit}>
               <Upload className="h-4 w-4 mr-2" />
               Avvia OCR & Estrazione
             </Button>
-            <Button variant="outline" onClick={() => router.back()}>
+            <Button variant="outline" onClick={() => router.back()} disabled={submitting}>
               Annulla
             </Button>
           </div>
-
-          {processing && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <FileText className="h-4 w-4" />
-                Estrazione in corso… aggiorno appena compaiono i nuovi documenti.
-              </div>
-              <Progress value={pollPct} />
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
