@@ -135,3 +135,19 @@ export async function pollPatientForNewDocs(
   }
   return false;
 }
+
+export async function fetchPacketStatus(pendingId: string) {
+  const res = await fetch(`${BASE_URL}/api/packet-status/${encodeURIComponent(pendingId)}`, {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Errore lettura stato");
+  return res.json() as Promise<{
+    pending_id: string;
+    stage: string;
+    percent: number;
+    message: string;
+    final_patient_id?: string;
+    sections_found?: string[];
+    documents_processed?: string[];
+  }>;
+}

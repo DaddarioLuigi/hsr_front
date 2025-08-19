@@ -1,13 +1,13 @@
 "use client";
-
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ingestPacketOCRSync, fetchPatients } from "@/lib/api";
+import { uploadPacketOCR, fetchPatients, fetchPacketStatus } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Upload, FileText, AlertCircle } from "lucide-react";
 
 export default function UploadPacketPage() {
   const router = useRouter();
@@ -19,13 +19,58 @@ export default function UploadPacketPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // opzionale: mostra qualche ID paziente esistente come hint
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [percent, setPercent] = useState<number>(0);
+  const [stage, setStage] = useState<string>("idle");
+  const [message, setMessage] = useState<string>("");
+  const pollTimer = useRef<any>(null);
+
   const [patients, setPatients] = useState<{ id: string; name: string }[]>([]);
   useEffect(() => {
-    fetchPatients()
-      .then((list: any[]) => setPatients(list.map((p) => ({ id: p.id, name: p.name }))))
-      .catch(() => {});
+    fetchPatients().then((list: any[]) => {
+      setPatients(list.map((p: any) => ({ id: p.id, name: p.name })));
+    }).catch(() => {});
   }, []);
+
+  function stageLabel(s: string) {
+    switch (s) {
+      case "upload_ok": return "Upload completato";
+      case "ocr_start": return "OCR in esecuzione";
+      case "ocr_done": return "OCR completato";
+      case "segmenting": return "Segmentazione documenti";
+      case "segmented": return "Sezioni individuate";
+      case "extracting": return "Estrazione entità";
+      case "consolidating": return "Consolidamento dati";
+      case "completed": return "Completato";
+      case "failed": return "Errore";
+      default: return "In attesa…";
+    }
+  }
+
+  async function startPolling(id: string) {
+    if (pollTimer.current) clearInterval(pollTimer.current);
+    pollTimer.current = setInterval(async () => {
+      try {
+        const s = await fetchPacketStatus(id);
+        setPercent(s.percent ?? 0);
+        setStage(s.stage ?? "unknown");
+        setMessage(s.message ?? "");
+        if (s.stage === "completed") {
+          clearInterval(pollTimer.current);
+          const pid = s.final_patient_id || patientId || id;
+          setPercent(100);
+          router.push(`/patient/${pid}?msg=estrazione_completata`);
+        } else if (s.stage === "failed") {
+          clearInterval(pollTimer.current);
+          setError(s.message || "Elaborazione fallita");
+        }
+      } catch {
+        // ignora errori temporanei
+      }
+    }, 1500);
+  }
+
+  useEffect(() => () => pollTimer.current && clearInterval(pollTimer.current), []);
 
   async function handleSubmit() {
     setError(null);
@@ -34,11 +79,15 @@ export default function UploadPacketPage() {
 
     setSubmitting(true);
     try {
-      // patientId è opzionale: se vuoto verrà ricavato da n_cartella della lettera di dimissione
-      const summary = await ingestPacketOCRSync(file, patientId || undefined);
-      router.push(`/patient/${summary.patient_id}?msg=estrazione_completata`);
+      const resp = await uploadPacketOCR(file, patientId || undefined);
+      const id = resp.pending_id || patientId || "_unknown";
+      setPendingId(id);
+      setStage("upload_ok");
+      setMessage("File caricato, elaborazione avviata…");
+      setPercent(5);
+      await startPolling(id);
     } catch (e: any) {
-      setError(e.message || "Errore durante l’upload/estrazione");
+      setError(e.message || "Errore durante l’upload OCR");
     } finally {
       setSubmitting(false);
     }
@@ -61,12 +110,8 @@ export default function UploadPacketPage() {
               placeholder="Es. 2025-0001 (oppure lascia vuoto)"
               value={patientId}
               onChange={(e) => setPatientId(e.target.value)}
+              disabled={!!pendingId}
             />
-            {patients.length > 0 && (
-              <div className="text-xs text-muted-foreground">
-                Esempi: {patients.slice(0, 3).map((p) => p.id).join(", ")}…
-              </div>
-            )}
           </div>
 
           <div className="space-y-2">
@@ -76,13 +121,18 @@ export default function UploadPacketPage() {
               type="file"
               accept="application/pdf"
               onChange={(e) => setFile(e.target.files?.[0] || null)}
+              disabled={!!pendingId}
             />
           </div>
 
-          {error && <div className="text-sm text-red-600">{error}</div>}
+          {error && (
+            <div className="text-sm text-red-600 flex items-center gap-2">
+              <AlertCircle className="h-4 w-4" /> {error}
+            </div>
+          )}
 
           <div className="flex gap-3">
-            <Button disabled={submitting} onClick={handleSubmit}>
+            <Button disabled={submitting || !!pendingId} onClick={handleSubmit}>
               <Upload className="h-4 w-4 mr-2" />
               Avvia OCR & Estrazione
             </Button>
@@ -90,6 +140,17 @@ export default function UploadPacketPage() {
               Annulla
             </Button>
           </div>
+
+          {!!pendingId && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <FileText className="h-4 w-4" />
+                {stageLabel(stage)} — {message}
+              </div>
+              <Progress value={percent} />
+              <div className="text-xs text-muted-foreground">{percent}%</div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
