@@ -73,3 +73,21 @@ export async function deleteDocument(documentId: string) {
   if (!r.ok || !data.success) throw new Error(data.error || "Delete failed");
   return data as { success: true; patient_deleted: boolean; document_type_deleted: boolean };
 }
+
+// Upload pacchetto (PDF unico) con OCR+estrazione
+export async function uploadPacketOCR(file: File, patientId: string) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("patient_id", patientId);
+
+  const res = await fetch(`${BASE_URL}/api/upload-packet-ocr`, {
+    method: "POST",
+    body: formData,
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(() => "");
+    throw new Error(t || "Errore upload pacchetto OCR");
+  }
+  return res.json(); // { status: "processing", patient_id, ... }
+}

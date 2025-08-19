@@ -141,6 +141,13 @@ export default function DashboardPage() {
                 Carica Documento
               </Button>
             </Link>
+            {/* NUOVO: upload pacchetto OCR */}
+            <Link href="/upload-packet">
+              <Button variant="outline">
+                <Upload className="h-4 w-4 mr-2" />
+                Carica Cartella (OCR)
+              </Button>
+            </Link>
             <Button onClick={handleExport}>
               <FileStack className="h-4 w-4 mr-2" />
               Esporta Excel
@@ -235,6 +242,12 @@ export default function DashboardPage() {
                         Aggiungi
                       </Button>
                     </Link>
+                    <Link href={`/upload-packet?patient_id=${patient.id}`} className="flex-1">
+                    <Button variant="outline" size="sm" className="w-full bg-transparent">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Cartella (OCR)
+                    </Button>
+                  </Link>
                   </div>
                 </CardContent>
               </Card>
