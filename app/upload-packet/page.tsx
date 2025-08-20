@@ -137,6 +137,7 @@ export default function UploadPacketPage() {
       case "ocr_start": return "OCR in esecuzione";
       case "ocr_done": return "OCR completato";
       case "segmenting": return "Segmentazione documenti";
+      case "segmented": return "Segmentazione completata";
       case "processing_sections": return "Elaborazione sezioni";
       case "completed": return "Completato";
       case "completed_with_errors": return "Completato con errori";
@@ -457,6 +458,12 @@ export default function UploadPacketPage() {
                   <FileText className="h-4 w-4" />
                   {processingStatus.message}
                 </div>
+                {processingStatus.current_section && (
+                  <div className="flex items-center gap-2 text-sm text-blue-600">
+                    <Clock className="h-4 w-4" />
+                    Sezione corrente: <Badge variant="outline">{processingStatus.current_section}</Badge>
+                  </div>
+                )}
                 <Progress value={processingStatus.progress} className="w-full" />
                 <div className="text-xs text-muted-foreground text-center">
                   {processingStatus.progress}%
@@ -633,7 +640,7 @@ export default function UploadPacketPage() {
                         </div>
                       </div>
                     ))}
-                  </div>
+                  </div> 
                 </div>
               )}
               
