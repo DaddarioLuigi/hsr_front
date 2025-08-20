@@ -7,8 +7,7 @@ import {
   fetchDocumentPacketStatus, 
   fetchDocumentOCRText, 
   fetchDocumentPacketFiles,
-  fetchPatients,
-  debugProcessingStatus
+  fetchPatients 
 } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +27,20 @@ import {
   Eye,
   FolderOpen,
   ArrowRight,
-  Clock
+  Clock,
+  User,
+  File,
+  HardDrive,
+  Database,
+  Settings,
+  Search,
+  Download,
+  Trash2,
+  Edit,
+  Plus,
+  Minus,
+  AlertTriangle,
+  HelpCircle
 } from "lucide-react";
 
 // Interfacce TypeScript
@@ -279,20 +291,6 @@ export default function UploadPacketPage() {
     }
   };
 
-  // Debug processing status
-  const handleDebugStatus = async () => {
-    if (!pendingId) return;
-    
-    try {
-      const debugInfo = await debugProcessingStatus(pendingId);
-      console.log("Debug Processing Status:", debugInfo);
-      alert(`Debug info salvata in console. Patient ID: ${pendingId}`);
-    } catch (error) {
-      console.error("Errore nel debug status:", error);
-      setError("Errore nel debug status");
-    }
-  };
-
   // Ottieni nome paziente corrente
   const currentPatient = patients.find(p => p.id === patientId);
   const currentPatientName = currentPatient?.name;
@@ -338,8 +336,9 @@ export default function UploadPacketPage() {
                 disabled={!!pendingId}
               />
               {currentPatientName && (
-                <p className="text-sm text-green-600">
-                  ✓ Paziente identificato: {currentPatientName}
+                <p className="text-sm text-green-600 flex items-center gap-1">
+                  <CheckCircle className="h-3 w-3" />
+                  Paziente identificato: {currentPatientName}
                 </p>
               )}
             </div>
@@ -354,9 +353,15 @@ export default function UploadPacketPage() {
                 disabled={!!pendingId}
               />
               {file && (
-                <div className="text-sm text-gray-600">
-                  <p>📄 {file.name}</p>
-                  <p>📏 {(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                <div className="text-sm text-gray-600 space-y-1">
+                  <p className="flex items-center gap-2">
+                    <File className="h-4 w-4" />
+                    {file.name}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <HardDrive className="h-4 w-4" />
+                    {(file.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
                 </div>
               )}
             </div>
@@ -531,14 +536,6 @@ export default function UploadPacketPage() {
                   </Button>
                 </div>
               )}
-
-              {/* Pulsante debug sempre visibile */}
-              <div className="flex gap-2 pt-2">
-                <Button onClick={handleDebugStatus} variant="outline" size="sm">
-                  <Info className="h-4 w-4 mr-2" />
-                  Debug Status
-                </Button>
-              </div>
             </div>
           )}
         </CardContent>
@@ -580,7 +577,10 @@ export default function UploadPacketPage() {
               
               {filesInfo.ocr_text && (
                 <div className="border rounded p-3">
-                  <h4 className="font-medium mb-2">📄 Testo OCR</h4>
+                  <h4 className="font-medium mb-2 flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Testo OCR
+                  </h4>
                   <p><strong>Cartella:</strong> {filesInfo.ocr_text.folder}</p>
                   <p><strong>File:</strong> {filesInfo.ocr_text.files.join(", ")}</p>
                 </div>
@@ -588,7 +588,10 @@ export default function UploadPacketPage() {
               
               {Object.keys(filesInfo.folders).length > 0 && (
                 <div className="border rounded p-3">
-                  <h4 className="font-medium mb-2">📁 Documenti Processati</h4>
+                  <h4 className="font-medium mb-2 flex items-center gap-2">
+                    <FolderOpen className="h-4 w-4" />
+                    Documenti Processati
+                  </h4>
                   <div className="space-y-2">
                     {Object.entries(filesInfo.folders).map(([docType, folderInfo]: [string, FolderInfo]) => (
                       <div key={docType} className="border-l-2 border-blue-200 pl-3">
@@ -612,7 +615,10 @@ export default function UploadPacketPage() {
               
               {filesInfo.processing_status && (
                 <div className="border rounded p-3">
-                  <h4 className="font-medium mb-2">🔄 Stato Processing</h4>
+                  <h4 className="font-medium mb-2 flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    Stato Processing
+                  </h4>
                   <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto">
                     {JSON.stringify(filesInfo.processing_status, null, 2)}
                   </pre>
