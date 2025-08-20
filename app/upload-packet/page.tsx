@@ -63,8 +63,6 @@ interface ProcessingStatus {
   sections_missing: string[];
   documents_created: DocumentCreated[];
   errors: string[];
-  original_patient_id?: string;
-  final_patient_id?: string;
   current_section?: string;
 }
 
@@ -189,23 +187,9 @@ export default function UploadPacketPage() {
         const status = await fetchDocumentPacketStatus(patientId);
         setProcessingStatus(status);
         
-        // Gestisce cambio di patient_id durante il processing (solo per compatibilità)
-        if (status.final_patient_id && status.final_patient_id !== patientId && status.original_patient_id) {
-          console.log(`Patient ID cambiato da ${patientId} a ${status.final_patient_id}`);
-          setPendingId(status.final_patient_id);
-          clearInterval(pollTimer.current!);
-          startPollingUnified(status.final_patient_id);
-          return;
-        }
-        
         if (status.status === "completed" || status.status === "completed_with_errors") {
           clearInterval(pollTimer.current!);
-          const finalId = status.final_patient_id || status.patient_id || patientId;
-          setPendingId(finalId);
-          
-          if (status.final_patient_id && status.final_patient_id !== patientId) {
-            console.log(`Elaborazione completata. ID paziente finale: ${status.final_patient_id}`);
-          }
+          setPendingId(patientId);
         } else if (status.status === "failed") {
           clearInterval(pollTimer.current!);
           setError(status.message || "Elaborazione fallita");
@@ -439,20 +423,6 @@ export default function UploadPacketPage() {
                 </Badge>
               </div>
               
-              {/* Informazioni cambio patient_id */}
-              {processingStatus.final_patient_id && 
-               processingStatus.final_patient_id !== processingStatus.patient_id && (
-                <Alert>
-                  <Info className="h-4 w-4" />
-                  <AlertDescription>
-                    <strong>ID Paziente estratto:</strong> {processingStatus.final_patient_id}
-                    {processingStatus.original_patient_id && (
-                      <span> (iniziale: {processingStatus.original_patient_id})</span>
-                    )}
-                  </AlertDescription>
-                </Alert>
-              )}
-              
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <FileText className="h-4 w-4" />
@@ -565,7 +535,7 @@ export default function UploadPacketPage() {
                     File Salvati
                   </Button>
                   <Button 
-                    onClick={() => router.push(`/patient/${processingStatus.final_patient_id || pendingId || patientId}`)} 
+                    onClick={() => router.push(`/patient/${pendingId || patientId}`)} 
                     variant="default" 
                     size="sm"
                     className="flex-1"
