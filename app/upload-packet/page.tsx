@@ -7,7 +7,8 @@ import {
   fetchDocumentPacketStatus, 
   fetchDocumentOCRText, 
   fetchDocumentPacketFiles,
-  fetchPatients 
+  fetchPatients,
+  debugProcessingStatus
 } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -278,6 +279,20 @@ export default function UploadPacketPage() {
     }
   };
 
+  // Debug processing status
+  const handleDebugStatus = async () => {
+    if (!pendingId) return;
+    
+    try {
+      const debugInfo = await debugProcessingStatus(pendingId);
+      console.log("Debug Processing Status:", debugInfo);
+      alert(`Debug info salvata in console. Patient ID: ${pendingId}`);
+    } catch (error) {
+      console.error("Errore nel debug status:", error);
+      setError("Errore nel debug status");
+    }
+  };
+
   // Ottieni nome paziente corrente
   const currentPatient = patients.find(p => p.id === patientId);
   const currentPatientName = currentPatient?.name;
@@ -516,6 +531,14 @@ export default function UploadPacketPage() {
                   </Button>
                 </div>
               )}
+
+              {/* Pulsante debug sempre visibile */}
+              <div className="flex gap-2 pt-2">
+                <Button onClick={handleDebugStatus} variant="outline" size="sm">
+                  <Info className="h-4 w-4 mr-2" />
+                  Debug Status
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
