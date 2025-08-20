@@ -74,40 +74,8 @@ export async function deleteDocument(documentId: string) {
   return data as { success: true; patient_deleted: boolean; document_type_deleted: boolean };
 }
 
-// Upload pacchetto (PDF unico) con OCR+estrazione — ASYNC
-export async function uploadPacketOCR(file: File, patientId?: string) {
-  const formData = new FormData();
-  formData.append("file", file);
-  if (patientId) formData.append("patient_id", patientId);
 
-  const res = await fetch(`${BASE_URL}/api/upload-packet-ocr`, {
-    method: "POST",
-    body: formData,
-    credentials: "include",
-  });
-  if (!res.ok) throw new Error((await res.text().catch(() => "")) || "Errore upload pacchetto OCR");
-  return res.json() as Promise<{ status: "processing"; pending_id?: string; patient_id?: string }>;
-}
 
-// Upload pacchetto (PDF unico) con OCR+estrazione — SYNC (ritorna subito patient_id finale)
-export async function ingestPacketOCRSync(file: File, patientId?: string) {
-  const formData = new FormData();
-  formData.append("file", file);
-  if (patientId) formData.append("patient_id", patientId);
-
-  const res = await fetch(`${BASE_URL}/api/ingest-packet-ocr-sync`, {
-    method: "POST",
-    body: formData,
-    credentials: "include",
-  });
-  if (!res.ok) throw new Error((await res.text().catch(() => "")) || "Errore ingest OCR (sync)");
-  return res.json() as Promise<{
-    patient_id: string;
-    sections_found: string[];
-    documents_processed: string[];
-    global_map: Record<string, any>;
-  }>;
-}
 
 // Utility: conta documenti correnti del paziente
 export async function getPatientDocumentCount(patientId: string): Promise<number> {
@@ -136,18 +104,68 @@ export async function pollPatientForNewDocs(
   return false;
 }
 
-export async function fetchPacketStatus(pendingId: string) {
-  const res = await fetch(`${BASE_URL}/api/packet-status/${encodeURIComponent(pendingId)}`, {
+// Nuove funzioni API per il flusso unificato
+
+// Upload documento con flusso unificato (process_as_packet)
+export async function uploadDocumentAsPacket(file: File, patientId?: string) {
+  const formData = new FormData();
+  formData.append("file", file);
+  if (patientId) formData.append("patient_id", patientId);
+  formData.append("process_as_packet", "true");
+
+  const res = await fetch(`${BASE_URL}/api/upload-document`, {
+    method: "POST",
+    body: formData,
     credentials: "include",
   });
-  if (!res.ok) throw new Error("Errore lettura stato");
+  if (!res.ok) throw new Error("Errore upload documento come pacchetto");
   return res.json() as Promise<{
-    pending_id: string;
-    stage: string;
-    percent: number;
+    filename: string;
+    patient_id: string;
+    status: "processing_as_packet";
     message: string;
-    final_patient_id?: string;
-    sections_found?: string[];
-    documents_processed?: string[];
+  }>;
+}
+
+// Stato processing del pacchetto unificato
+export async function fetchDocumentPacketStatus(patientId: string) {
+  const res = await fetch(`${BASE_URL}/api/document-packet-status/${encodeURIComponent(patientId)}`, {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Errore lettura stato pacchetto");
+  return res.json() as Promise<{
+    patient_id: string;
+    status: "ocr_start" | "segmenting" | "processing_sections" | "completed" | "completed_with_errors" | "failed";
+    message: string;
+    progress: number;
+    filename: string;
+    sections_found: string[];
+    sections_missing: string[];
+    documents_created: Array<{
+      document_id: string;
+      document_type: string;
+      filename: string;
+      status: "processed";
+      entities_count: number;
+    }>;
+    errors: string[];
+  }>;
+}
+
+// Testo OCR estratto
+export async function fetchDocumentOCRText(patientId: string) {
+  const res = await fetch(`${BASE_URL}/api/document-ocr-text/${encodeURIComponent(patientId)}`, {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Errore lettura testo OCR");
+  return res.json() as Promise<{
+    patient_id: string;
+    filename: string;
+    ocr_text: string;
+    metadata: {
+      original_filename: string;
+      upload_date: string;
+      content_type: string;
+    };
   }>;
 }
