@@ -169,3 +169,11 @@ export async function fetchDocumentOCRText(patientId: string) {
     };
   }>;
 }
+
+export async function fetchDocumentPacketFiles(patientId: string): Promise<any> {
+  const response = await fetch(`/api/document-packet-files/${patientId}`);
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+}
