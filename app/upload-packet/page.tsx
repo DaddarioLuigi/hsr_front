@@ -520,6 +520,22 @@ export default function UploadPacketPage() {
                 </div>
               )}
 
+              {/* Documenti creati in tempo reale */}
+              {processingStatus.current_section && processingStatus.documents_created.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm text-blue-600">Ultimo documento processato:</h4>
+                  <div className="bg-blue-50 p-2 rounded">
+                    <div className="flex items-center gap-2 text-sm">
+                      <CheckCircle className="h-3 w-3 text-green-600" />
+                      <span className="font-medium">{processingStatus.current_section}</span>
+                      <span className="text-muted-foreground">
+                        ({processingStatus.documents_created[processingStatus.documents_created.length - 1]?.entities_count || 0} entità estratte)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Errori */}
               {processingStatus.errors.length > 0 && (
                 <div className="space-y-2">
@@ -636,7 +652,7 @@ export default function UploadPacketPage() {
                                 {file.size > 0 ? `${(file.size / 1024).toFixed(1)} KB` : '0 KB'}
                               </span>
                             </div>
-                          ))} 
+                          ))}
                         </div>
                       </div>
                     ))}
