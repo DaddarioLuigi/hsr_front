@@ -189,8 +189,8 @@ export default function UploadPacketPage() {
         const status = await fetchDocumentPacketStatus(patientId);
         setProcessingStatus(status);
         
-        // Gestisce cambio di patient_id durante il processing
-        if (status.final_patient_id && status.final_patient_id !== patientId) {
+        // Gestisce cambio di patient_id durante il processing (solo per compatibilità)
+        if (status.final_patient_id && status.final_patient_id !== patientId && status.original_patient_id) {
           console.log(`Patient ID cambiato da ${patientId} a ${status.final_patient_id}`);
           setPendingId(status.final_patient_id);
           clearInterval(pollTimer.current!);
@@ -636,11 +636,11 @@ export default function UploadPacketPage() {
                                 {file.size > 0 ? `${(file.size / 1024).toFixed(1)} KB` : '0 KB'}
                               </span>
                             </div>
-                          ))}
+                          ))} 
                         </div>
                       </div>
                     ))}
-                  </div> 
+                  </div>
                 </div>
               )}
               
