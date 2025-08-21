@@ -89,6 +89,22 @@ interface FilesInfo {
   processing_status?: any;
 }
 
+// Funzione di utilità per validare i dati del processing status
+function validateProcessingStatus(data: any): ProcessingStatus {
+  return {
+    patient_id: data?.patient_id || "",
+    status: data?.status || "processing",
+    message: data?.message || "",
+    progress: data?.progress || 0,
+    filename: data?.filename,
+    sections_found: Array.isArray(data?.sections_found) ? data.sections_found : [],
+    sections_missing: Array.isArray(data?.sections_missing) ? data.sections_missing : [],
+    documents_created: Array.isArray(data?.documents_created) ? data.documents_created : [],
+    errors: Array.isArray(data?.errors) ? data.errors : [],
+    current_section: data?.current_section
+  };
+}
+
 export default function UploadPacketPage() {
   const router = useRouter();
   const search = useSearchParams();
@@ -185,14 +201,22 @@ export default function UploadPacketPage() {
     pollTimer.current = setInterval(async () => {
       try {
         const status = await fetchDocumentPacketStatus(patientId);
-        setProcessingStatus(status);
+        // Valida i dati ricevuti dal backend
+        const validatedStatus = validateProcessingStatus(status);
+        setProcessingStatus(validatedStatus);
         
-        if (status.status === "completed" || status.status === "completed_with_errors") {
+        // Se l'ID è cambiato, aggiorna il pendingId
+        if (validatedStatus.patient_id && validatedStatus.patient_id !== patientId) {
+          setPendingId(validatedStatus.patient_id);
+          console.log(`Patient ID aggiornato da ${patientId} a ${validatedStatus.patient_id}`);
+        }
+        
+        if (validatedStatus.status === "completed" || validatedStatus.status === "completed_with_errors") {
           clearInterval(pollTimer.current!);
-          setPendingId(patientId);
-        } else if (status.status === "failed") {
+          setPendingId(validatedStatus.patient_id || patientId);
+        } else if (validatedStatus.status === "failed") {
           clearInterval(pollTimer.current!);
-          setError(status.message || "Elaborazione fallita");
+          setError(validatedStatus.message || "Elaborazione fallita");
         }
       } catch {
         // Ignora errori temporanei
@@ -441,7 +465,7 @@ export default function UploadPacketPage() {
               </div>
 
               {/* Sezioni trovate */}
-              {processingStatus.sections_found.length > 0 && (
+              {processingStatus.sections_found && processingStatus.sections_found.length > 0 && (
                 <div className="space-y-2">
                   <h4 className="font-medium text-sm">Sezioni Trovate:</h4>
                   <div className="flex flex-wrap gap-2">
@@ -458,7 +482,7 @@ export default function UploadPacketPage() {
               )}
 
               {/* Sezioni mancanti */}
-              {processingStatus.sections_missing.length > 0 && (
+              {processingStatus.sections_missing && processingStatus.sections_missing.length > 0 && (
                 <div className="space-y-2">
                   <h4 className="font-medium text-sm">Sezioni Mancanti:</h4>
                   <Alert variant="destructive">
@@ -471,7 +495,7 @@ export default function UploadPacketPage() {
               )}
 
               {/* Documenti creati */}
-              {processingStatus.documents_created.length > 0 && (
+              {processingStatus.documents_created && processingStatus.documents_created.length > 0 && (
                 <div className="space-y-2">
                   <h4 className="font-medium text-sm">Documenti Creati:</h4>
                   <div className="space-y-1">
@@ -491,7 +515,7 @@ export default function UploadPacketPage() {
               )}
 
               {/* Documenti creati in tempo reale */}
-              {processingStatus.current_section && processingStatus.documents_created.length > 0 && (
+              {processingStatus.current_section && processingStatus.documents_created && processingStatus.documents_created.length > 0 && (
                 <div className="space-y-2">
                   <h4 className="font-medium text-sm text-blue-600">Ultimo documento processato:</h4>
                   <div className="bg-blue-50 p-2 rounded">
@@ -507,7 +531,7 @@ export default function UploadPacketPage() {
               )}
 
               {/* Errori */}
-              {processingStatus.errors.length > 0 && (
+              {processingStatus.errors && processingStatus.errors.length > 0 && (
                 <div className="space-y-2">
                   <h4 className="font-medium text-sm text-red-600">Errori:</h4>
                   <Alert variant="destructive">
@@ -603,7 +627,7 @@ export default function UploadPacketPage() {
                 </div>
               )}
               
-              {Object.keys(filesInfo.folders).length > 0 && (
+              {filesInfo.folders && Object.keys(filesInfo.folders).length > 0 && (
                 <div className="border rounded p-3">
                   <h4 className="font-medium mb-2 flex items-center gap-2">
                     <FolderOpen className="h-4 w-4" />
@@ -615,7 +639,7 @@ export default function UploadPacketPage() {
                         <p className="font-medium text-blue-800">{docType}</p>
                         <p className="text-sm text-gray-600">{folderInfo.path}</p>
                         <div className="mt-1">
-                          {folderInfo.files.map((file: FileInfo) => (
+                          {folderInfo.files && folderInfo.files.map((file: FileInfo) => (
                             <div key={file.name} className="text-sm flex justify-between">
                               <span>{file.name}</span>
                               <span className="text-gray-500">
