@@ -317,7 +317,7 @@ export default function EditorPage() {
                           Errore: le entità non sono in un formato valido
                         </div>
                       )
-                    }
+                    } 
                     
                     return entities.filter(ent => ent && typeof ent === 'object' && ent.id).map(ent => {
                       return (
