@@ -181,8 +181,54 @@ export default function EditorPage() {
         }
       }
       
+      // If entity is an object with cardiac parameters, convert it
+      if (entity.AVA !== undefined || entity.AVAi !== undefined || entity.PVL !== undefined || 
+          entity.bicuspide !== undefined || entity.gradiente_max !== undefined || 
+          entity.gradiente_med !== undefined || entity.insufficienza !== undefined || 
+          entity.stenosi !== undefined) {
+        console.log(`Entity ${index} has cardiac parameters, converting...`)
+        const values = []
+        if (entity.AVA !== undefined) values.push(`AVA: ${entity.AVA}`)
+        if (entity.AVAi !== undefined) values.push(`AVAi: ${entity.AVAi}`)
+        if (entity.PVL !== undefined) values.push(`PVL: ${entity.PVL}`)
+        if (entity.bicuspide !== undefined) values.push(`Bicuspide: ${entity.bicuspide}`)
+        if (entity.gradiente_max !== undefined) values.push(`Gradiente Max: ${entity.gradiente_max}`)
+        if (entity.gradiente_med !== undefined) values.push(`Gradiente Med: ${entity.gradiente_med}`)
+        if (entity.insufficienza !== undefined) values.push(`Insufficienza: ${entity.insufficienza}`)
+        if (entity.stenosi !== undefined) values.push(`Stenosi: ${entity.stenosi}`)
+        
+        return {
+          id: entity.id || `entity-${index}`,
+          type: "Parametri Cardiaci",
+          value: values.join(", "),
+          confidence: entity.confidence || 1.0
+        }
+      }
+      
       // Fallback for any other object structure
       console.log(`Entity ${index} using fallback conversion`)
+      console.log(`Entity ${index} keys:`, Object.keys(entity))
+      
+      // If it's an object with multiple keys, convert all keys to readable format
+      if (typeof entity === 'object' && entity !== null && !Array.isArray(entity)) {
+        const keys = Object.keys(entity)
+        if (keys.length > 0) {
+          const values = keys.map(key => {
+            const value = entity[key]
+            // Convert camelCase to readable format
+            const readableKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+            return `${readableKey}: ${value}`
+          })
+          
+          return {
+            id: entity.id || `entity-${index}`,
+            type: entity.type || "Parametri Medici",
+            value: values.join(", "),
+            confidence: entity.confidence || 1.0
+          }
+        }
+      }
+      
       return {
         id: entity.id || `entity-${index}`,
         type: entity.type || "Entità",
@@ -256,27 +302,10 @@ export default function EditorPage() {
               <Button onClick={handleAddEntity} variant="outline" size="sm">
                 <Plus className="h-4 w-4 mr-1" /> Aggiungi
               </Button>
-              <Button 
-                onClick={() => {
-                  const testEntities = [
-                    { altezza: "170", bmi: "25", bsa: "1.8", peso: "70" },
-                    { id: "test1", type: "Test", value: "Test Value", confidence: 0.9 }
-                  ]
-                  console.log("Testing normalization with:", testEntities)
-                  const normalized = normalizeEntities(testEntities)
-                  console.log("Normalized result:", normalized)
-                  setEntities(normalized)
-                }} 
-                variant="outline" 
-                size="sm"
-              >
-                Test Normalization
-              </Button>
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-2">
-              {console.log("Rendering entities:", entities)}
               <AnimatePresence>
                 {(() => {
                   try {
@@ -291,7 +320,6 @@ export default function EditorPage() {
                     }
                     
                     return entities.filter(ent => ent && typeof ent === 'object' && ent.id).map(ent => {
-                      console.log("Rendering entity:", ent)
                       return (
                       <motion.div
                         key={ent.id}
