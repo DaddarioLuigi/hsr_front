@@ -15,9 +15,9 @@ import { fetchDocumentDetail, updateDocumentEntities } from "@/lib/api"
 
 interface Entity {
   id: string
-  type: string
-  value: string
-  confidence: number
+  type?: string
+  value?: string
+  confidence?: number
 }
 
 interface DocumentData {
@@ -55,7 +55,7 @@ export default function EditorPage() {
       try {
         const data = await fetchDocumentDetail(documentId)
         setDocumentData(data)
-        setEntities(data.entities)
+        setEntities(normalizeEntities(data.entities))
       } catch (err: any) {
         setError(err.message || "Errore caricamento documento")
       } finally {
@@ -67,7 +67,7 @@ export default function EditorPage() {
 
   // Handlers...
   const handleStartEdit = (e: Entity) =>
-    setEditingEntity({ id: e.id, type: e.type, value: e.value })
+    setEditingEntity({ id: e.id, type: e.type || "", value: e.value || "" })
   const handleCancelEdit = () => setEditingEntity(null)
   const handleConfirmEdit = () => {
     if (!editingEntity) return
@@ -91,7 +91,14 @@ export default function EditorPage() {
     setSaving(true)
     setError(null)
     try {
-      await updateDocumentEntities(documentId, entities)
+      // Ensure all entities have the required structure before saving
+      const normalizedEntities = entities.map(ent => ({
+        id: ent.id,
+        type: ent.type || "Entità",
+        value: ent.value || "",
+        confidence: ent.confidence || 1.0
+      }))
+      await updateDocumentEntities(documentId, normalizedEntities)
       router.push("/")
     } catch (err: any) {
       setError(err.message || "Errore salvataggio entità")
@@ -106,6 +113,40 @@ export default function EditorPage() {
       : c >= 0.7
       ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300"
       : "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
+
+  // Normalize entity data to ensure consistent structure
+  const normalizeEntities = (entities: any[]): Entity[] => {
+    return entities.map((entity, index) => {
+      // If entity is already in the correct format, return as is
+      if (entity.id && entity.type && entity.value !== undefined && entity.confidence !== undefined) {
+        return entity as Entity
+      }
+      
+      // If entity is an object with altezza, bmi, bsa, peso keys, convert it
+      if (entity.altezza !== undefined || entity.bmi !== undefined || entity.bsa !== undefined || entity.peso !== undefined) {
+        const values = []
+        if (entity.altezza !== undefined) values.push(`Altezza: ${entity.altezza}`)
+        if (entity.bmi !== undefined) values.push(`BMI: ${entity.bmi}`)
+        if (entity.bsa !== undefined) values.push(`BSA: ${entity.bsa}`)
+        if (entity.peso !== undefined) values.push(`Peso: ${entity.peso}`)
+        
+        return {
+          id: entity.id || `entity-${index}`,
+          type: "Parametri Fisici",
+          value: values.join(", "),
+          confidence: entity.confidence || 1.0
+        }
+      }
+      
+      // Fallback for any other object structure
+      return {
+        id: entity.id || `entity-${index}`,
+        type: entity.type || "Entità",
+        value: typeof entity.value === 'string' ? entity.value : JSON.stringify(entity.value),
+        confidence: entity.confidence || 1.0
+      }
+    })
+  }
 
   if (loading) {
     return (
@@ -176,7 +217,7 @@ export default function EditorPage() {
           <CardContent>
             <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-2">
               <AnimatePresence>
-                {entities.map(ent => (
+                {entities.filter(ent => ent && typeof ent === 'object' && ent.id).map(ent => (
                   <motion.div
                     key={ent.id}
                     layout
@@ -197,11 +238,11 @@ export default function EditorPage() {
                     ) : (
                       <div className="flex items-center justify-between">
                         <div>
-                          <Label className="font-medium">{ent.type}</Label>
+                          <Label className="font-medium">{ent.type || "Entità"}</Label>
                           <p className="text-muted-foreground">{ent.value || "N/A"}</p>
                         </div>
                         <div className="flex items-center gap-1">
-                          <Badge variant="secondary" className={getConfidenceColor(ent.confidence)}>{Math.round(ent.confidence * 100)}%</Badge>
+                          <Badge variant="secondary" className={getConfidenceColor(ent.confidence || 1.0)}>{Math.round((ent.confidence || 1.0) * 100)}%</Badge>
                           <Button size="icon" variant="ghost" onClick={() => handleStartEdit(ent)}><Edit3 className="h-4 w-4" /></Button>
                           <Button size="icon" variant="ghost" className="text-destructive" onClick={() => handleDeleteEntity(ent.id)}><Trash2 className="h-4 w-4" /></Button>
                         </div>
