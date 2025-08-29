@@ -73,3 +73,57 @@ export async function deleteDocument(documentId: string) {
   if (!r.ok || !data.success) throw new Error(data.error || "Delete failed");
   return data as { success: true; patient_deleted: boolean; document_type_deleted: boolean };
 }
+
+// Upload documento come pacchetto (flusso unificato)
+export async function uploadDocumentAsPacket(file: File, patientId?: string) {
+  const formData = new FormData();
+  formData.append("file", file);
+  if (patientId) {
+    formData.append("patient_id", patientId);
+  }
+  formData.append("process_as_packet", "true");
+
+  const res = await fetch(`${BASE_URL}/api/upload-document`, {
+    method: "POST",
+    body: formData,
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Errore upload documento come pacchetto");
+  return res.json();
+}
+
+// Status del processing del pacchetto
+export async function fetchDocumentPacketStatus(patientId: string) {
+  const res = await fetch(`${BASE_URL}/api/document-packet-status/${patientId}`, {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Errore nel recupero status");
+  return res.json();
+}
+
+// Testo OCR del documento
+export async function fetchDocumentOCRText(patientId: string) {
+  const res = await fetch(`${BASE_URL}/api/document-ocr-text/${patientId}`, {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Errore nel recupero testo OCR");
+  return res.json();
+}
+
+// File salvati del pacchetto
+export async function fetchDocumentPacketFiles(patientId: string) {
+  const res = await fetch(`${BASE_URL}/api/document-packet-files/${patientId}`, {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Errore nel recupero file");
+  return res.json();
+}
+
+// Debug processing status
+export async function debugProcessingStatus(patientId: string) {
+  const res = await fetch(`${BASE_URL}/api/debug-processing-status/${patientId}`, {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Errore nel debug status");
+  return res.json();
+}

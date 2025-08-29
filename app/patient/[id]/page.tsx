@@ -174,7 +174,7 @@ export default function PatientPage() {
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
           className="space-y-4"
-        >
+        >  
           {patientData.documents.map((document, index) => (
             <motion.div
               key={document.id}
