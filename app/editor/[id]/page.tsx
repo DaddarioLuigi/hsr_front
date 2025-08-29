@@ -54,9 +54,30 @@ export default function EditorPage() {
       setError(null)
       try {
         const data = await fetchDocumentDetail(documentId)
+        console.log("Raw document data:", data)
+        
+        // Ensure data.entities exists and is an array
+        if (!data || !data.entities) {
+          console.warn("No entities found in document data")
+          setDocumentData(data)
+          setEntities([])
+          return
+        }
+        
+        if (!Array.isArray(data.entities)) {
+          console.warn("entities is not an array:", data.entities)
+          setDocumentData(data)
+          setEntities([])
+          return
+        }
+        
+        console.log("Raw entities before normalization:", data.entities)
+        const normalized = normalizeEntities(data.entities)
+        console.log("Normalized entities:", normalized)
         setDocumentData(data)
-        setEntities(normalizeEntities(data.entities))
+        setEntities(normalized)
       } catch (err: any) {
+        console.error("Error loading document:", err)
         setError(err.message || "Errore caricamento documento")
       } finally {
         setLoading(false)
@@ -116,14 +137,36 @@ export default function EditorPage() {
 
   // Normalize entity data to ensure consistent structure
   const normalizeEntities = (entities: any[]): Entity[] => {
+    console.log("normalizeEntities called with:", entities)
+    
+    if (!Array.isArray(entities)) {
+      console.warn("entities is not an array:", entities)
+      return []
+    }
+    
     return entities.map((entity, index) => {
+      console.log(`Processing entity ${index}:`, entity)
+      
+      // Handle null/undefined entities
+      if (!entity || typeof entity !== 'object') {
+        console.warn(`Entity ${index} is invalid:`, entity)
+        return {
+          id: `entity-${index}`,
+          type: "Entità Invalida",
+          value: "Dato non valido",
+          confidence: 0.0
+        }
+      }
+      
       // If entity is already in the correct format, return as is
       if (entity.id && entity.type && entity.value !== undefined && entity.confidence !== undefined) {
+        console.log(`Entity ${index} is already normalized`)
         return entity as Entity
       }
       
       // If entity is an object with altezza, bmi, bsa, peso keys, convert it
       if (entity.altezza !== undefined || entity.bmi !== undefined || entity.bsa !== undefined || entity.peso !== undefined) {
+        console.log(`Entity ${index} has physical parameters, converting...`)
         const values = []
         if (entity.altezza !== undefined) values.push(`Altezza: ${entity.altezza}`)
         if (entity.bmi !== undefined) values.push(`BMI: ${entity.bmi}`)
@@ -139,6 +182,7 @@ export default function EditorPage() {
       }
       
       // Fallback for any other object structure
+      console.log(`Entity ${index} using fallback conversion`)
       return {
         id: entity.id || `entity-${index}`,
         type: entity.type || "Entità",
@@ -212,44 +256,84 @@ export default function EditorPage() {
               <Button onClick={handleAddEntity} variant="outline" size="sm">
                 <Plus className="h-4 w-4 mr-1" /> Aggiungi
               </Button>
+              <Button 
+                onClick={() => {
+                  const testEntities = [
+                    { altezza: "170", bmi: "25", bsa: "1.8", peso: "70" },
+                    { id: "test1", type: "Test", value: "Test Value", confidence: 0.9 }
+                  ]
+                  console.log("Testing normalization with:", testEntities)
+                  const normalized = normalizeEntities(testEntities)
+                  console.log("Normalized result:", normalized)
+                  setEntities(normalized)
+                }} 
+                variant="outline" 
+                size="sm"
+              >
+                Test Normalization
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-2">
+              {console.log("Rendering entities:", entities)}
               <AnimatePresence>
-                {entities.filter(ent => ent && typeof ent === 'object' && ent.id).map(ent => (
-                  <motion.div
-                    key={ent.id}
-                    layout
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="p-3 border rounded-lg"
-                  >
-                    {editingEntity?.id === ent.id ? (
-                      <>
-                        <Input placeholder="Tipo entità" value={editingEntity.type} onChange={e => setEditingEntity({ ...editingEntity, type: e.target.value })} />
-                        <Input placeholder="Valore" value={editingEntity.value} onChange={e => setEditingEntity({ ...editingEntity, value: e.target.value })} />
-                        <div className="flex justify-end gap-2 pt-2">
-                          <Button variant="ghost" size="sm" onClick={handleCancelEdit}>Annulla</Button>
-                          <Button size="sm" onClick={handleConfirmEdit}>Conferma</Button>
+                {(() => {
+                  try {
+                    // Ensure entities is an array
+                    if (!Array.isArray(entities)) {
+                      console.warn("entities is not an array in render:", entities)
+                      return (
+                        <div className="p-4 text-red-600 border border-red-200 rounded-lg">
+                          Errore: le entità non sono in un formato valido
                         </div>
-                      </>
-                    ) : (
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Label className="font-medium">{ent.type || "Entità"}</Label>
-                          <p className="text-muted-foreground">{ent.value || "N/A"}</p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Badge variant="secondary" className={getConfidenceColor(ent.confidence || 1.0)}>{Math.round((ent.confidence || 1.0) * 100)}%</Badge>
-                          <Button size="icon" variant="ghost" onClick={() => handleStartEdit(ent)}><Edit3 className="h-4 w-4" /></Button>
-                          <Button size="icon" variant="ghost" className="text-destructive" onClick={() => handleDeleteEntity(ent.id)}><Trash2 className="h-4 w-4" /></Button>
-                        </div>
+                      )
+                    }
+                    
+                    return entities.filter(ent => ent && typeof ent === 'object' && ent.id).map(ent => {
+                      console.log("Rendering entity:", ent)
+                      return (
+                      <motion.div
+                        key={ent.id}
+                        layout
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="p-3 border rounded-lg"
+                      >
+                        {editingEntity?.id === ent.id ? (
+                          <>
+                            <Input placeholder="Tipo entità" value={editingEntity.type} onChange={e => setEditingEntity({ ...editingEntity, type: e.target.value })} />
+                            <Input placeholder="Valore" value={editingEntity.value} onChange={e => setEditingEntity({ ...editingEntity, value: e.target.value })} />
+                            <div className="flex justify-end gap-2 pt-2">
+                              <Button variant="ghost" size="sm" onClick={handleCancelEdit}>Annulla</Button>
+                              <Button size="sm" onClick={handleConfirmEdit}>Conferma</Button>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <Label className="font-medium">{ent.type || "Entità"}</Label>
+                              <p className="text-muted-foreground">{ent.value || "N/A"}</p>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Badge variant="secondary" className={getConfidenceColor(ent.confidence || 1.0)}>{Math.round((ent.confidence || 1.0) * 100)}%</Badge>
+                              <Button size="icon" variant="ghost" onClick={() => handleStartEdit(ent)}><Edit3 className="h-4 w-4" /></Button>
+                              <Button size="icon" variant="ghost" className="text-destructive" onClick={() => handleDeleteEntity(ent.id)}><Trash2 className="h-4 w-4" /></Button>
+                            </div>
+                          </div>
+                        )}
+                      </motion.div>
+                    )})
+                  } catch (error) {
+                    console.error("Error rendering entities:", error)
+                    return (
+                      <div className="p-4 text-red-600 border border-red-200 rounded-lg">
+                        Errore nel rendering delle entità: {error instanceof Error ? error.message : String(error)}
                       </div>
-                    )}
-                  </motion.div>
-                ))}
+                    )
+                  }
+                })()}
               </AnimatePresence>
             </div>
           </CardContent>
