@@ -1,4 +1,5 @@
-const BASE_URL = "https://clinicalaiclinicalfolders-production.up.railway.app";
+// Usa l'API locale in sviluppo se disponibile, altrimenti fallback alla production
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 // Lista pazienti
 export async function fetchPatients() {

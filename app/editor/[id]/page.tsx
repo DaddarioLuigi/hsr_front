@@ -12,12 +12,24 @@ import { Badge } from "@/components/ui/badge"
 import { motion, AnimatePresence } from "framer-motion"
 import { HospitalHeader } from "@/components/hospital-header"
 import { fetchDocumentDetail, updateDocumentEntities } from "@/lib/api"
+import { PDFViewerWithHighlights } from "@/components/pdf-viewer-with-highlights"
+
+interface Position {
+  page: number
+  x0: number
+  y0: number
+  x1: number
+  y1: number
+  width: number
+  height: number
+}
 
 interface Entity {
   id: string
   type?: string
   value?: string
   confidence?: number
+  position?: Position | null
 }
 
 interface DocumentData {
@@ -41,11 +53,17 @@ export default function EditorPage() {
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null)
+  const [pdfPage, setPdfPage] = useState(1)
 
   // Compute PDF URL
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5050"
-  const docPath = documentData?.pdf_path ?? documentData?.pdfPath
-  const pdfUrl = docPath ? `${API_BASE}${docPath}` : undefined
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+  // Usa pdf_path se disponibile, altrimenti costruisci il percorso
+  const pdfUrl = documentData?.pdf_path 
+    ? `${API_BASE}${documentData.pdf_path}`
+    : documentData 
+    ? `${API_BASE}/uploads/${documentData.patient_id}/${documentData.document_type}/${documentData.filename.replace(/\.[^/.]+$/, "")}.pdf`
+    : undefined
 
   // Load document data
   useEffect(() => {
@@ -269,7 +287,7 @@ export default function EditorPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="container mx-auto px-4 py-8"
+        className="w-full max-w-[95vw] mx-auto px-6 py-8"
       >
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -279,7 +297,7 @@ export default function EditorPage() {
             <h1 className="text-3xl font-bold">Editor Entità</h1>
             <p className="text-muted-foreground">{documentData.filename}</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-shrink-0">
             <Button onClick={handleSave} disabled={saving}>
               {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Salva Modifiche
             </Button>
@@ -293,19 +311,65 @@ export default function EditorPage() {
           </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center">
-                <Edit3 className="h-5 w-5 mr-2" /> Entità Estratte
-              </CardTitle>
-              <Button onClick={handleAddEntity} variant="outline" size="sm">
-                <Plus className="h-4 w-4 mr-1" /> Aggiungi
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-2">
+        {/* Layout a due colonne: PDF a sinistra, Entità a destra */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_0.9fr] xl:grid-cols-[1.5fr_1fr] gap-8 min-h-[calc(100vh-250px)]">
+          {/* Colonna sinistra: PDF Viewer */}
+          <div className="order-2 lg:order-1 self-start">
+            {pdfUrl ? (
+              <Card className="w-full">
+                <CardHeader className="pb-3">
+                  <CardTitle>Visualizzazione PDF</CardTitle>
+                </CardHeader>
+                <CardContent className="px-0 pb-4">
+                  <PDFViewerWithHighlights
+                    pdfUrl={pdfUrl}
+                    entities={entities}
+                    selectedEntityId={selectedEntityId}
+                    onEntityClick={(entityId) => {
+                      const entity = entities.find(e => e.id === entityId)
+                      setSelectedEntityId(entityId === selectedEntityId ? null : entityId)
+                      
+                      // Se l'entità ha una posizione, cambia pagina
+                      if (entity?.position?.page) {
+                        setPdfPage(entity.position.page)
+                      }
+                      
+                      // Scrolla all'entità nella lista
+                      setTimeout(() => {
+                        const element = document.getElementById(`entity-${entityId}`)
+                        if (element) {
+                          element.scrollIntoView({ behavior: "smooth", block: "center" })
+                        }
+                      }, 100)
+                    }}
+                    onPageChange={(page) => setPdfPage(page)}
+                  />
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="h-full">
+                <CardContent className="flex items-center justify-center h-full min-h-[400px]">
+                  <p className="text-muted-foreground">PDF non disponibile</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Colonna destra: Entità Estratte */}
+          <div className="order-1 lg:order-2">
+            <Card className="h-full flex flex-col">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center">
+                    <Edit3 className="h-5 w-5 mr-2" /> Entità Estratte
+                  </CardTitle>
+                  <Button onClick={handleAddEntity} variant="outline" size="sm">
+                    <Plus className="h-4 w-4 mr-1" /> Aggiungi
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="flex-1 overflow-hidden min-h-[600px]">
+                <div className="space-y-3 h-full overflow-y-auto pr-3">
               <AnimatePresence>
                 {(() => {
                   try {
@@ -322,12 +386,24 @@ export default function EditorPage() {
                     return entities.filter(ent => ent && typeof ent === 'object' && ent.id).map(ent => {
                       return (
                       <motion.div
+                        id={`entity-${ent.id}`}
                         key={ent.id}
                         layout
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="p-3 border rounded-lg"
+                        className={`p-3 border rounded-lg transition-all ${
+                          selectedEntityId === ent.id ? "ring-2 ring-blue-500 bg-blue-50" : ""
+                        }`}
+                        onClick={() => {
+                          if (ent.position) {
+                            setSelectedEntityId(ent.id === selectedEntityId ? null : ent.id)
+                            // Se l'entità ha una posizione, cambia pagina se necessario
+                            if (ent.position.page && ent.position.page !== pdfPage) {
+                              setPdfPage(ent.position.page)
+                            }
+                          }
+                        }}
                       >
                         {editingEntity?.id === ent.id ? (
                           <>
@@ -363,9 +439,11 @@ export default function EditorPage() {
                   }
                 })()}
               </AnimatePresence>
-            </div>
-          </CardContent>
-        </Card>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </motion.div>
     </div>
   )
