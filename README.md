@@ -2,12 +2,6 @@
 
 **Clinical Folders Data Extraction System**
 
-A modern web application for managing and extracting structured data from clinical documents using AI-powered OCR and entity extraction.
-
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/luigis-projects-ad2a0fd7/v0-vercel-frontend-development)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/FGuuFP3qliE)
-
----
 
 ## Table of Contents
 
@@ -552,35 +546,3 @@ pnpm start
 
 The application is deployed on **Vercel** and automatically syncs with v0.dev deployments. The backend API is hosted on **Railway**.
 
-### Deployment Flow
-
-1. Code changes pushed to repository
-2. Vercel automatically builds and deploys
-3. Frontend connects to Railway backend API
-4. CORS and credentials handled via `credentials: "include"`
-
----
-
-## Future Enhancements
-
-Potential improvements:
-- Authentication and user management
-- Real-time updates via WebSockets
-- Advanced search and filtering
-- Batch operations
-- Document versioning
-- Audit logs
-- Advanced analytics dashboard
-- Multi-language support
-
----
-
-## License
-
-Private project for Fondazione Alfieri.
-
----
-
-## Support
-
-For issues or questions, contact the development team or refer to the backend API documentation.
