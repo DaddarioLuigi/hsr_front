@@ -1,4 +1,5 @@
-const BASE_URL = "clinicalaiclinicalfolders-production.up.railway.app";
+// Base URL del backend - può essere configurata tramite variabile d'ambiente
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://clinicalaiclinicalfolders-production.up.railway.app";
 
 // Lista pazienti
 export async function fetchPatients() {
