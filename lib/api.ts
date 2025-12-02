@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080" || "https://clinicalaiclinicalfolders-production.up.railway.app";
+const BASE_URL = "clinicalaiclinicalfolders-production.up.railway.app";
 
 // Lista pazienti
 export async function fetchPatients() {
