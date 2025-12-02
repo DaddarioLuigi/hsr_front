@@ -1,9 +1,30 @@
 // Base URL del backend - può essere configurata tramite variabile d'ambiente
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://clinicalaiclinicalfolders-production.up.railway.app" || "http://localhost:8080";
+// Assicuriamoci che sia sempre un URL completo con protocollo
+function getBaseUrl(): string {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  
+  // Se c'è una variabile d'ambiente, usala (ma assicurati che abbia il protocollo)
+  if (envUrl) {
+    let url = envUrl.trim();
+    // Se non inizia con http:// o https://, aggiungi https://
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      url = `https://${url}`;
+    }
+    // Rimuovi slash finale se presente
+    url = url.replace(/\/+$/, "");
+    return url;
+  }
+  
+  // Fallback: usa l'URL di produzione
+  return "https://clinicalaiclinicalfolders-production.up.railway.app";
+}
+
+const BASE_URL = getBaseUrl();
 
 // Debug: stampa la BASE_URL utilizzata
 console.log("🔍 [API DEBUG] BASE_URL configurata:", BASE_URL);
 console.log("🔍 [API DEBUG] NEXT_PUBLIC_API_URL env:", process.env.NEXT_PUBLIC_API_URL);
+console.log("🔍 [API DEBUG] BASE_URL finale (dopo normalizzazione):", BASE_URL);
 
 // Lista pazienti
 export async function fetchPatients() {
