@@ -57,7 +57,19 @@ export default function EditorPage() {
   const [pdfPage, setPdfPage] = useState(1)
 
   // Compute PDF URL
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+  // Normalizza API_BASE per assicurarsi che abbia sempre il protocollo
+  const getApiBase = () => {
+    const envUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+    let url = envUrl.trim()
+    // Se non inizia con http:// o https://, aggiungi https://
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      url = `https://${url}`
+    }
+    // Rimuovi slash finale se presente
+    url = url.replace(/\/+$/, "")
+    return url
+  }
+  const API_BASE = getApiBase()
   // Usa pdf_path se disponibile, altrimenti costruisci il percorso
   // Se pdf_path è già un URL completo (inizia con http:// o https://), usalo direttamente
   // Se pdf_path contiene un dominio (es. clinicalaiclinicalfolders-production.up.railway.app), aggiungi https://
@@ -102,6 +114,13 @@ export default function EditorPage() {
         const normalizedPath = path.startsWith('/') ? path : `/${path}`
         const relativeUrl = `${API_BASE}${normalizedPath}`
         console.log("[PDF URL] Percorso relativo, usando API_BASE:", relativeUrl)
+        console.log("[PDF URL] API_BASE utilizzato:", API_BASE)
+        // Verifica che l'URL sia assoluto
+        if (!relativeUrl.startsWith('http://') && !relativeUrl.startsWith('https://')) {
+          console.error("[PDF URL] ERRORE: URL costruito non è assoluto:", relativeUrl)
+          // Forza https:// se manca
+          return `https://${relativeUrl}`
+        }
         return relativeUrl
       })()
     : documentData 
