@@ -62,27 +62,54 @@ export default function EditorPage() {
   // Se pdf_path è già un URL completo (inizia con http:// o https://), usalo direttamente
   // Se pdf_path contiene un dominio (es. clinicalaiclinicalfolders-production.up.railway.app), aggiungi https://
   const pdfUrl = documentData?.pdf_path 
-    ? (() => {
+      ? (() => {
         const path = documentData.pdf_path.trim()
+        console.log("[PDF URL] pdf_path originale ricevuto:", path)
         // Se è già un URL completo, usalo direttamente
         if (path.startsWith('http://') || path.startsWith('https://')) {
+          console.log("[PDF URL] Usando URL completo:", path)
           return path
         }
         // Se contiene un dominio (contiene punti e non inizia con /), aggiungi https://
-        if (path.includes('.') && !path.startsWith('/') && !path.startsWith('./')) {
-          // Verifica se sembra un dominio (contiene almeno un punto e non è un percorso relativo)
-          const looksLikeDomain = /^[a-zA-Z0-9][a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(path.split('/')[0])
-          if (looksLikeDomain) {
-            return `https://${path}`
-          }
+        // Estrai il primo segmento (prima del primo /) per verificare se è un dominio
+        const firstSegment = path.split('/')[0]
+        console.log("[PDF URL] Primo segmento estratto:", firstSegment)
+        
+        // Verifica se sembra un dominio: deve contenere almeno un punto e avere un TLD valido
+        // Pattern migliorato: supporta domini con sottodomini multipli
+        // Esempi: example.com, sub.example.com, clinicalaiclinicalfolders-production.up.railway.app
+        // Il pattern verifica che ci sia almeno un punto seguito da un TLD valido (almeno 2 caratteri)
+        const domainPattern = /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/
+        const looksLikeDomain = domainPattern.test(firstSegment)
+        console.log("[PDF URL] Pattern match dominio?", looksLikeDomain)
+        
+        // Controllo aggiuntivo: se contiene almeno due punti (suggerisce un dominio con sottodomini)
+        // o se contiene "railway.app", "vercel.app", "netlify.app" etc (domini noti di hosting)
+        const hasMultipleDots = (firstSegment.match(/\./g) || []).length >= 2
+        const hasKnownHostingDomain = /\.(railway|vercel|netlify|heroku|aws|azure|gcp)\./.test(firstSegment)
+        const definitelyDomain = looksLikeDomain || (hasMultipleDots && firstSegment.includes('.')) || hasKnownHostingDomain
+        
+        console.log("[PDF URL] Controlli aggiuntivi - Punti multipli:", hasMultipleDots, "Hosting noto:", hasKnownHostingDomain, "Definitivamente dominio:", definitelyDomain)
+        
+        if (definitelyDomain) {
+          // È un dominio, crea URL assoluto con https://
+          const absoluteUrl = `https://${path}`
+          console.log("[PDF URL] Rilevato dominio, creando URL assoluto:", absoluteUrl)
+          return absoluteUrl
         }
         // Altrimenti è un percorso relativo, aggiungi API_BASE
         // Assicurati che il percorso inizi con / se non c'è già
         const normalizedPath = path.startsWith('/') ? path : `/${path}`
-        return `${API_BASE}${normalizedPath}`
+        const relativeUrl = `${API_BASE}${normalizedPath}`
+        console.log("[PDF URL] Percorso relativo, usando API_BASE:", relativeUrl)
+        return relativeUrl
       })()
     : documentData 
-    ? `${API_BASE}/uploads/${documentData.patient_id}/${documentData.document_type}/${documentData.filename.replace(/\.[^/.]+$/, "")}.pdf`
+    ? (() => {
+        const constructedUrl = `${API_BASE}/uploads/${documentData.patient_id}/${documentData.document_type}/${documentData.filename.replace(/\.[^/.]+$/, "")}.pdf`
+        console.log(" [PDF URL] Costruito da dati documento:", constructedUrl)
+        return constructedUrl
+      })()
     : undefined
 
   // Load document data

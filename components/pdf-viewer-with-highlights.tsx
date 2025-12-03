@@ -55,6 +55,16 @@ export function PDFViewerWithHighlights({
   useEffect(() => {
     if (!pdfUrl) return
     
+    // Verifica che l'URL sia assoluto (inizia con http:// o https://)
+    // Se non lo è, potrebbe essere interpretato come relativo dal browser
+    if (!pdfUrl.startsWith('http://') && !pdfUrl.startsWith('https://')) {
+      console.error("[PDF Viewer] URL non assoluto ricevuto:", pdfUrl)
+      console.error("[PDF Viewer] L'URL deve iniziare con http:// o https://")
+      setLoadingPdf(false)
+      return
+    }
+    
+    console.log("[PDF Viewer] Caricamento PDF da URL:", pdfUrl)
     setLoadingPdf(true)
     fetch(pdfUrl, {
       credentials: "include",

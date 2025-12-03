@@ -22,35 +22,35 @@ function getBaseUrl(): string {
 const BASE_URL = getBaseUrl();
 
 // Debug: stampa la BASE_URL utilizzata
-console.log("🔍 [API DEBUG] BASE_URL configurata:", BASE_URL);
-console.log("🔍 [API DEBUG] NEXT_PUBLIC_API_URL env:", process.env.NEXT_PUBLIC_API_URL);
-console.log("🔍 [API DEBUG] BASE_URL finale (dopo normalizzazione):", BASE_URL);
+console.log("[API DEBUG] BASE_URL configurata:", BASE_URL);
+console.log("[API DEBUG] NEXT_PUBLIC_API_URL env:", process.env.NEXT_PUBLIC_API_URL);
+console.log("[API DEBUG] BASE_URL finale (dopo normalizzazione):", BASE_URL);
 
 // Lista pazienti
 export async function fetchPatients() {
   const url = `${BASE_URL}/api/patients`;
-  console.log("🔍 [API DEBUG] fetchPatients - URL:", url);
-  console.log("🔍 [API DEBUG] fetchPatients - Method: GET");
-  console.log("🔍 [API DEBUG] fetchPatients - Credentials: include");
+  console.log("[API DEBUG] fetchPatients - URL:", url);
+  console.log("[API DEBUG] fetchPatients - Method: GET");
+  console.log("[API DEBUG] fetchPatients - Credentials: include");
   
   try {
     const res = await fetch(url, {
       credentials: "include",
     });
-    console.log("🔍 [API DEBUG] fetchPatients - Response status:", res.status, res.statusText);
-    console.log("🔍 [API DEBUG] fetchPatients - Response ok:", res.ok);
+    console.log("[API DEBUG] fetchPatients - Response status:", res.status, res.statusText);
+    console.log("[API DEBUG] fetchPatients - Response ok:", res.ok);
     
     if (!res.ok) {
       const errorText = await res.text();
-      console.error("❌ [API DEBUG] fetchPatients - Error response:", errorText);
+      console.error("[API DEBUG ERROR] fetchPatients - Error response:", errorText);
       throw new Error("Errore nel caricamento pazienti");
     }
     
     const data = await res.json();
-    console.log("✅ [API DEBUG] fetchPatients - Success, data received:", data);
+    console.log("[API DEBUG SUCCESS] fetchPatients - Success, data received:", data);
     return data;
   } catch (error) {
-    console.error("❌ [API DEBUG] fetchPatients - Exception:", error);
+    console.error("[API DEBUG ERROR] fetchPatients - Exception:", error);
     throw error;
   }
 }
@@ -58,27 +58,27 @@ export async function fetchPatients() {
 // Dettaglio paziente
 export async function fetchPatientDetail(patientId: string) {
   const url = `${BASE_URL}/api/patient/${patientId}`;
-  console.log("🔍 [API DEBUG] fetchPatientDetail - URL:", url);
-  console.log("🔍 [API DEBUG] fetchPatientDetail - Patient ID:", patientId);
-  console.log("🔍 [API DEBUG] fetchPatientDetail - Method: GET");
+  console.log("[API DEBUG] fetchPatientDetail - URL:", url);
+  console.log("[API DEBUG] fetchPatientDetail - Patient ID:", patientId);
+  console.log("[API DEBUG] fetchPatientDetail - Method: GET");
   
   try {
     const res = await fetch(url, {
       credentials: "include",
     });
-    console.log("🔍 [API DEBUG] fetchPatientDetail - Response status:", res.status, res.statusText);
+    console.log("[API DEBUG] fetchPatientDetail - Response status:", res.status, res.statusText);
     
     if (!res.ok) {
       const errorText = await res.text();
-      console.error("❌ [API DEBUG] fetchPatientDetail - Error response:", errorText);
+      console.error("[API DEBUG ERROR] fetchPatientDetail - Error response:", errorText);
       throw new Error("Paziente non trovato");
     }
     
     const data = await res.json();
-    console.log("✅ [API DEBUG] fetchPatientDetail - Success");
+    console.log("[API DEBUG SUCCESS] fetchPatientDetail - Success");
     return data;
   } catch (error) {
-    console.error("❌ [API DEBUG] fetchPatientDetail - Exception:", error);
+    console.error("[API DEBUG ERROR] fetchPatientDetail - Exception:", error);
     throw error;
   }
 }
@@ -86,11 +86,11 @@ export async function fetchPatientDetail(patientId: string) {
 // Upload documento PDF
 export async function uploadDocument(file: File, patientId: string) {
   const url = `${BASE_URL}/api/upload-document`;
-  console.log("🔍 [API DEBUG] uploadDocument - URL:", url);
-  console.log("🔍 [API DEBUG] uploadDocument - Method: POST");
-  console.log("🔍 [API DEBUG] uploadDocument - File name:", file.name);
-  console.log("🔍 [API DEBUG] uploadDocument - File size:", file.size, "bytes");
-  console.log("🔍 [API DEBUG] uploadDocument - Patient ID:", patientId);
+  console.log("[API DEBUG] uploadDocument - URL:", url);
+  console.log("[API DEBUG] uploadDocument - Method: POST");
+  console.log("[API DEBUG] uploadDocument - File name:", file.name);
+  console.log("[API DEBUG] uploadDocument - File size:", file.size, "bytes");
+  console.log("[API DEBUG] uploadDocument - Patient ID:", patientId);
   
   const formData = new FormData();
   formData.append("file", file);
@@ -102,19 +102,19 @@ export async function uploadDocument(file: File, patientId: string) {
       body: formData,
       credentials: "include",
     });
-    console.log("🔍 [API DEBUG] uploadDocument - Response status:", res.status, res.statusText);
+    console.log("[API DEBUG] uploadDocument - Response status:", res.status, res.statusText);
     
     if (!res.ok) {
       const errorText = await res.text();
-      console.error("❌ [API DEBUG] uploadDocument - Error response:", errorText);
+      console.error("[API DEBUG ERROR] uploadDocument - Error response:", errorText);
       throw new Error("Errore upload documento");
     }
     
     const data = await res.json();
-    console.log("✅ [API DEBUG] uploadDocument - Success");
+    console.log("[API DEBUG SUCCESS] uploadDocument - Success");
     return data;
   } catch (error) {
-    console.error("❌ [API DEBUG] uploadDocument - Exception:", error);
+    console.error("[API DEBUG ERROR] uploadDocument - Exception:", error);
     throw error;
   }
 }
@@ -122,27 +122,27 @@ export async function uploadDocument(file: File, patientId: string) {
 // Dettaglio documento
 export async function fetchDocumentDetail(documentId: string) {
   const url = `${BASE_URL}/api/document/${documentId}`;
-  console.log("🔍 [API DEBUG] fetchDocumentDetail - URL:", url);
-  console.log("🔍 [API DEBUG] fetchDocumentDetail - Document ID:", documentId);
-  console.log("🔍 [API DEBUG] fetchDocumentDetail - Method: GET");
+  console.log("[API DEBUG] fetchDocumentDetail - URL:", url);
+  console.log("[API DEBUG] fetchDocumentDetail - Document ID:", documentId);
+  console.log("[API DEBUG] fetchDocumentDetail - Method: GET");
   
   try {
     const res = await fetch(url, {
       credentials: "include",
     });
-    console.log("🔍 [API DEBUG] fetchDocumentDetail - Response status:", res.status, res.statusText);
+    console.log("[API DEBUG] fetchDocumentDetail - Response status:", res.status, res.statusText);
     
     if (!res.ok) {
       const errorText = await res.text();
-      console.error("❌ [API DEBUG] fetchDocumentDetail - Error response:", errorText);
+      console.error("[API DEBUG ERROR] fetchDocumentDetail - Error response:", errorText);
       throw new Error("Documento non trovato");
     }
     
     const data = await res.json();
-    console.log("✅ [API DEBUG] fetchDocumentDetail - Success");
+    console.log("[API DEBUG SUCCESS] fetchDocumentDetail - Success");
     return data;
   } catch (error) {
-    console.error("❌ [API DEBUG] fetchDocumentDetail - Exception:", error);
+    console.error("[API DEBUG ERROR] fetchDocumentDetail - Exception:", error);
     throw error;
   }
 }
@@ -150,13 +150,13 @@ export async function fetchDocumentDetail(documentId: string) {
 // Aggiorna entità documento
 export async function updateDocumentEntities(documentId: string, entities: any[]) {
   const url = `${BASE_URL}/api/document/${documentId}`;
-  console.log("🔍 [API DEBUG] updateDocumentEntities - URL:", url);
-  console.log("🔍 [API DEBUG] updateDocumentEntities - Method: PUT");
-  console.log("🔍 [API DEBUG] updateDocumentEntities - Document ID:", documentId);
-  console.log("🔍 [API DEBUG] updateDocumentEntities - Entities count:", entities.length);
+  console.log("[API DEBUG] updateDocumentEntities - URL:", url);
+  console.log("[API DEBUG] updateDocumentEntities - Method: PUT");
+  console.log("[API DEBUG] updateDocumentEntities - Document ID:", documentId);
+  console.log("[API DEBUG] updateDocumentEntities - Entities count:", entities.length);
   
   const body = JSON.stringify({ entities });
-  console.log("🔍 [API DEBUG] updateDocumentEntities - Request body:", body);
+  console.log("[API DEBUG] updateDocumentEntities - Request body:", body);
   
   try {
     const res = await fetch(url, {
@@ -165,19 +165,19 @@ export async function updateDocumentEntities(documentId: string, entities: any[]
       body: body,
       credentials: "include",
     });
-    console.log("🔍 [API DEBUG] updateDocumentEntities - Response status:", res.status, res.statusText);
+    console.log("[API DEBUG] updateDocumentEntities - Response status:", res.status, res.statusText);
     
     if (!res.ok) {
       const errorText = await res.text();
-      console.error("❌ [API DEBUG] updateDocumentEntities - Error response:", errorText);
+      console.error("[API DEBUG ERROR] updateDocumentEntities - Error response:", errorText);
       throw new Error("Errore aggiornamento entità");
     }
     
     const data = await res.json();
-    console.log("✅ [API DEBUG] updateDocumentEntities - Success");
+    console.log("[API DEBUG SUCCESS] updateDocumentEntities - Success");
     return data;
   } catch (error) {
-    console.error("❌ [API DEBUG] updateDocumentEntities - Exception:", error);
+    console.error("[API DEBUG ERROR] updateDocumentEntities - Exception:", error);
     throw error;
   }
 }
@@ -185,26 +185,26 @@ export async function updateDocumentEntities(documentId: string, entities: any[]
 // Export Excel
 export async function exportExcel() {
   const url = `${BASE_URL}/api/export-excel`;
-  console.log("🔍 [API DEBUG] exportExcel - URL:", url);
-  console.log("🔍 [API DEBUG] exportExcel - Method: GET");
+  console.log("[API DEBUG] exportExcel - URL:", url);
+  console.log("[API DEBUG] exportExcel - Method: GET");
   
   try {
     const res = await fetch(url, {
       credentials: "include",
     });
-    console.log("🔍 [API DEBUG] exportExcel - Response status:", res.status, res.statusText);
+    console.log("[API DEBUG] exportExcel - Response status:", res.status, res.statusText);
     
     if (!res.ok) {
       const errorText = await res.text();
-      console.error("❌ [API DEBUG] exportExcel - Error response:", errorText);
+      console.error("[API DEBUG ERROR] exportExcel - Error response:", errorText);
       throw new Error("Errore export Excel");
     }
     
     const blob = await res.blob();
-    console.log("✅ [API DEBUG] exportExcel - Success, blob size:", blob.size, "bytes");
+    console.log("[API DEBUG SUCCESS] exportExcel - Success, blob size:", blob.size, "bytes");
     return blob;
   } catch (error) {
-    console.error("❌ [API DEBUG] exportExcel - Exception:", error);
+    console.error("[API DEBUG ERROR] exportExcel - Exception:", error);
     throw error;
   }
 }
@@ -212,29 +212,29 @@ export async function exportExcel() {
 // Elimina documento
 export async function deleteDocument(documentId: string) {
   const url = `${BASE_URL}/api/document/${encodeURIComponent(documentId)}`;
-  console.log("🔍 [API DEBUG] deleteDocument - URL:", url);
-  console.log("🔍 [API DEBUG] deleteDocument - Method: DELETE");
-  console.log("🔍 [API DEBUG] deleteDocument - Document ID:", documentId);
+  console.log("[API DEBUG] deleteDocument - URL:", url);
+  console.log("[API DEBUG] deleteDocument - Method: DELETE");
+  console.log("[API DEBUG] deleteDocument - Document ID:", documentId);
   
   try {
     const r = await fetch(url, {
       method: "DELETE",
       credentials: "include",
     });
-    console.log("🔍 [API DEBUG] deleteDocument - Response status:", r.status, r.statusText);
+    console.log("[API DEBUG] deleteDocument - Response status:", r.status, r.statusText);
     
     const data = await r.json();
-    console.log("🔍 [API DEBUG] deleteDocument - Response data:", data);
+    console.log("[API DEBUG] deleteDocument - Response data:", data);
     
     if (!r.ok || !data.success) {
-      console.error("❌ [API DEBUG] deleteDocument - Error:", data.error || "Delete failed");
+      console.error("[API DEBUG ERROR] deleteDocument - Error:", data.error || "Delete failed");
       throw new Error(data.error || "Delete failed");
     }
     
-    console.log("✅ [API DEBUG] deleteDocument - Success");
+    console.log("[API DEBUG SUCCESS] deleteDocument - Success");
     return data as { success: true; patient_deleted: boolean; document_type_deleted: boolean };
   } catch (error) {
-    console.error("❌ [API DEBUG] deleteDocument - Exception:", error);
+    console.error("[API DEBUG ERROR] deleteDocument - Exception:", error);
     throw error;
   }
 }
@@ -242,11 +242,11 @@ export async function deleteDocument(documentId: string) {
 // Upload documento come pacchetto (flusso unificato)
 export async function uploadDocumentAsPacket(file: File, patientId?: string) {
   const url = `${BASE_URL}/api/upload-document`;
-  console.log("🔍 [API DEBUG] uploadDocumentAsPacket - URL:", url);
-  console.log("🔍 [API DEBUG] uploadDocumentAsPacket - Method: POST");
-  console.log("🔍 [API DEBUG] uploadDocumentAsPacket - File name:", file.name);
-  console.log("🔍 [API DEBUG] uploadDocumentAsPacket - File size:", file.size, "bytes");
-  console.log("🔍 [API DEBUG] uploadDocumentAsPacket - Patient ID:", patientId || "undefined");
+  console.log("[API DEBUG] uploadDocumentAsPacket - URL:", url);
+  console.log("[API DEBUG] uploadDocumentAsPacket - Method: POST");
+  console.log("[API DEBUG] uploadDocumentAsPacket - File name:", file.name);
+  console.log("[API DEBUG] uploadDocumentAsPacket - File size:", file.size, "bytes");
+  console.log("[API DEBUG] uploadDocumentAsPacket - Patient ID:", patientId || "undefined");
   
   const formData = new FormData();
   formData.append("file", file);
@@ -261,19 +261,19 @@ export async function uploadDocumentAsPacket(file: File, patientId?: string) {
       body: formData,
       credentials: "include",
     });
-    console.log("🔍 [API DEBUG] uploadDocumentAsPacket - Response status:", res.status, res.statusText);
+    console.log("[API DEBUG] uploadDocumentAsPacket - Response status:", res.status, res.statusText);
     
     if (!res.ok) {
       const errorText = await res.text();
-      console.error("❌ [API DEBUG] uploadDocumentAsPacket - Error response:", errorText);
+      console.error("[API DEBUG ERROR] uploadDocumentAsPacket - Error response:", errorText);
       throw new Error("Errore upload documento come pacchetto");
     }
     
     const data = await res.json();
-    console.log("✅ [API DEBUG] uploadDocumentAsPacket - Success, response:", data);
+    console.log("[API DEBUG SUCCESS] uploadDocumentAsPacket - Success, response:", data);
     return data;
   } catch (error) {
-    console.error("❌ [API DEBUG] uploadDocumentAsPacket - Exception:", error);
+    console.error("[API DEBUG ERROR] uploadDocumentAsPacket - Exception:", error);
     throw error;
   }
 }
@@ -281,27 +281,27 @@ export async function uploadDocumentAsPacket(file: File, patientId?: string) {
 // Status del processing del pacchetto
 export async function fetchDocumentPacketStatus(patientId: string) {
   const url = `${BASE_URL}/api/document-packet-status/${patientId}`;
-  console.log("🔍 [API DEBUG] fetchDocumentPacketStatus - URL:", url);
-  console.log("🔍 [API DEBUG] fetchDocumentPacketStatus - Patient ID:", patientId);
-  console.log("🔍 [API DEBUG] fetchDocumentPacketStatus - Method: GET");
+  console.log("[API DEBUG] fetchDocumentPacketStatus - URL:", url);
+  console.log("[API DEBUG] fetchDocumentPacketStatus - Patient ID:", patientId);
+  console.log("[API DEBUG] fetchDocumentPacketStatus - Method: GET");
   
   try {
     const res = await fetch(url, {
       credentials: "include",
     });
-    console.log("🔍 [API DEBUG] fetchDocumentPacketStatus - Response status:", res.status, res.statusText);
+    console.log("[API DEBUG] fetchDocumentPacketStatus - Response status:", res.status, res.statusText);
     
     if (!res.ok) {
       const errorText = await res.text();
-      console.error("❌ [API DEBUG] fetchDocumentPacketStatus - Error response:", errorText);
+      console.error("[API DEBUG ERROR] fetchDocumentPacketStatus - Error response:", errorText);
       throw new Error("Errore nel recupero status");
     }
     
     const data = await res.json();
-    console.log("✅ [API DEBUG] fetchDocumentPacketStatus - Success, status:", data);
+    console.log("[API DEBUG SUCCESS] fetchDocumentPacketStatus - Success, status:", data);
     return data;
   } catch (error) {
-    console.error("❌ [API DEBUG] fetchDocumentPacketStatus - Exception:", error);
+    console.error("[API DEBUG ERROR] fetchDocumentPacketStatus - Exception:", error);
     throw error;
   }
 }
@@ -309,27 +309,27 @@ export async function fetchDocumentPacketStatus(patientId: string) {
 // Testo OCR del documento
 export async function fetchDocumentOCRText(patientId: string) {
   const url = `${BASE_URL}/api/document-ocr-text/${patientId}`;
-  console.log("🔍 [API DEBUG] fetchDocumentOCRText - URL:", url);
-  console.log("🔍 [API DEBUG] fetchDocumentOCRText - Patient ID:", patientId);
-  console.log("🔍 [API DEBUG] fetchDocumentOCRText - Method: GET");
+  console.log("[API DEBUG] fetchDocumentOCRText - URL:", url);
+  console.log("[API DEBUG] fetchDocumentOCRText - Patient ID:", patientId);
+  console.log("[API DEBUG] fetchDocumentOCRText - Method: GET");
   
   try {
     const res = await fetch(url, {
       credentials: "include",
     });
-    console.log("🔍 [API DEBUG] fetchDocumentOCRText - Response status:", res.status, res.statusText);
+    console.log("[API DEBUG] fetchDocumentOCRText - Response status:", res.status, res.statusText);
     
     if (!res.ok) {
       const errorText = await res.text();
-      console.error("❌ [API DEBUG] fetchDocumentOCRText - Error response:", errorText);
+      console.error("[API DEBUG ERROR] fetchDocumentOCRText - Error response:", errorText);
       throw new Error("Errore nel recupero testo OCR");
     }
     
     const data = await res.json();
-    console.log("✅ [API DEBUG] fetchDocumentOCRText - Success");
+    console.log("[API DEBUG SUCCESS] fetchDocumentOCRText - Success");
     return data;
   } catch (error) {
-    console.error("❌ [API DEBUG] fetchDocumentOCRText - Exception:", error);
+    console.error("[API DEBUG ERROR] fetchDocumentOCRText - Exception:", error);
     throw error;
   }
 }
@@ -337,27 +337,27 @@ export async function fetchDocumentOCRText(patientId: string) {
 // File salvati del pacchetto
 export async function fetchDocumentPacketFiles(patientId: string) {
   const url = `${BASE_URL}/api/document-packet-files/${patientId}`;
-  console.log("🔍 [API DEBUG] fetchDocumentPacketFiles - URL:", url);
-  console.log("🔍 [API DEBUG] fetchDocumentPacketFiles - Patient ID:", patientId);
-  console.log("🔍 [API DEBUG] fetchDocumentPacketFiles - Method: GET");
+  console.log("[API DEBUG] fetchDocumentPacketFiles - URL:", url);
+  console.log("[API DEBUG] fetchDocumentPacketFiles - Patient ID:", patientId);
+  console.log("[API DEBUG] fetchDocumentPacketFiles - Method: GET");
   
   try {
     const res = await fetch(url, {
       credentials: "include",
     });
-    console.log("🔍 [API DEBUG] fetchDocumentPacketFiles - Response status:", res.status, res.statusText);
+    console.log("[API DEBUG] fetchDocumentPacketFiles - Response status:", res.status, res.statusText);
     
     if (!res.ok) {
       const errorText = await res.text();
-      console.error("❌ [API DEBUG] fetchDocumentPacketFiles - Error response:", errorText);
+      console.error("[API DEBUG ERROR] fetchDocumentPacketFiles - Error response:", errorText);
       throw new Error("Errore nel recupero file");
     }
     
     const data = await res.json();
-    console.log("✅ [API DEBUG] fetchDocumentPacketFiles - Success");
+    console.log("[API DEBUG SUCCESS] fetchDocumentPacketFiles - Success");
     return data;
   } catch (error) {
-    console.error("❌ [API DEBUG] fetchDocumentPacketFiles - Exception:", error);
+    console.error("[API DEBUG ERROR] fetchDocumentPacketFiles - Exception:", error);
     throw error;
   }
 }
@@ -365,27 +365,27 @@ export async function fetchDocumentPacketFiles(patientId: string) {
 // Debug processing status
 export async function debugProcessingStatus(patientId: string) {
   const url = `${BASE_URL}/api/debug-processing-status/${patientId}`;
-  console.log("🔍 [API DEBUG] debugProcessingStatus - URL:", url);
-  console.log("🔍 [API DEBUG] debugProcessingStatus - Patient ID:", patientId);
-  console.log("🔍 [API DEBUG] debugProcessingStatus - Method: GET");
+  console.log("[API DEBUG] debugProcessingStatus - URL:", url);
+  console.log("[API DEBUG] debugProcessingStatus - Patient ID:", patientId);
+  console.log("[API DEBUG] debugProcessingStatus - Method: GET");
   
   try {
     const res = await fetch(url, {
       credentials: "include",
     });
-    console.log("🔍 [API DEBUG] debugProcessingStatus - Response status:", res.status, res.statusText);
+    console.log("[API DEBUG] debugProcessingStatus - Response status:", res.status, res.statusText);
     
     if (!res.ok) {
       const errorText = await res.text();
-      console.error("❌ [API DEBUG] debugProcessingStatus - Error response:", errorText);
+      console.error("[API DEBUG ERROR] debugProcessingStatus - Error response:", errorText);
       throw new Error("Errore nel debug status");
     }
     
     const data = await res.json();
-    console.log("✅ [API DEBUG] debugProcessingStatus - Success");
+    console.log("[API DEBUG SUCCESS] debugProcessingStatus - Success");
     return data;
   } catch (error) {
-    console.error("❌ [API DEBUG] debugProcessingStatus - Exception:", error);
+    console.error("[API DEBUG ERROR] debugProcessingStatus - Exception:", error);
     throw error;
   }
 }
