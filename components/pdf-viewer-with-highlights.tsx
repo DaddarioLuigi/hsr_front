@@ -64,7 +64,6 @@ export function PDFViewerWithHighlights({
       return
     }
     
-    console.log("[PDF Viewer] Caricamento PDF da URL:", pdfUrl)
     setLoadingPdf(true)
     fetch(pdfUrl, {
       credentials: "include",

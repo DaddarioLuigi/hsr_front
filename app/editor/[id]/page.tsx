@@ -76,16 +76,13 @@ export default function EditorPage() {
   const pdfUrl = documentData?.pdf_path 
       ? (() => {
         const path = documentData.pdf_path.trim()
-        console.log("[PDF URL] pdf_path originale ricevuto:", path)
         // Se è già un URL completo, usalo direttamente
         if (path.startsWith('http://') || path.startsWith('https://')) {
-          console.log("[PDF URL] Usando URL completo:", path)
           return path
         }
         // Se contiene un dominio (contiene punti e non inizia con /), aggiungi https://
         // Estrai il primo segmento (prima del primo /) per verificare se è un dominio
         const firstSegment = path.split('/')[0]
-        console.log("[PDF URL] Primo segmento estratto:", firstSegment)
         
         // Verifica se sembra un dominio: deve contenere almeno un punto e avere un TLD valido
         // Pattern migliorato: supporta domini con sottodomini multipli
@@ -93,7 +90,6 @@ export default function EditorPage() {
         // Il pattern verifica che ci sia almeno un punto seguito da un TLD valido (almeno 2 caratteri)
         const domainPattern = /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/
         const looksLikeDomain = domainPattern.test(firstSegment)
-        console.log("[PDF URL] Pattern match dominio?", looksLikeDomain)
         
         // Controllo aggiuntivo: se contiene almeno due punti (suggerisce un dominio con sottodomini)
         // o se contiene "railway.app", "vercel.app", "netlify.app" etc (domini noti di hosting)
@@ -101,20 +97,14 @@ export default function EditorPage() {
         const hasKnownHostingDomain = /\.(railway|vercel|netlify|heroku|aws|azure|gcp)\./.test(firstSegment)
         const definitelyDomain = looksLikeDomain || (hasMultipleDots && firstSegment.includes('.')) || hasKnownHostingDomain
         
-        console.log("[PDF URL] Controlli aggiuntivi - Punti multipli:", hasMultipleDots, "Hosting noto:", hasKnownHostingDomain, "Definitivamente dominio:", definitelyDomain)
-        
         if (definitelyDomain) {
           // È un dominio, crea URL assoluto con https://
-          const absoluteUrl = `https://${path}`
-          console.log("[PDF URL] Rilevato dominio, creando URL assoluto:", absoluteUrl)
-          return absoluteUrl
+          return `https://${path}`
         }
         // Altrimenti è un percorso relativo, aggiungi API_BASE
         // Assicurati che il percorso inizi con / se non c'è già
         const normalizedPath = path.startsWith('/') ? path : `/${path}`
         const relativeUrl = `${API_BASE}${normalizedPath}`
-        console.log("[PDF URL] Percorso relativo, usando API_BASE:", relativeUrl)
-        console.log("[PDF URL] API_BASE utilizzato:", API_BASE)
         // Verifica che l'URL sia assoluto
         if (!relativeUrl.startsWith('http://') && !relativeUrl.startsWith('https://')) {
           console.error("[PDF URL] ERRORE: URL costruito non è assoluto:", relativeUrl)
@@ -124,11 +114,7 @@ export default function EditorPage() {
         return relativeUrl
       })()
     : documentData 
-    ? (() => {
-        const constructedUrl = `${API_BASE}/uploads/${documentData.patient_id}/${documentData.document_type}/${documentData.filename.replace(/\.[^/.]+$/, "")}.pdf`
-        console.log(" [PDF URL] Costruito da dati documento:", constructedUrl)
-        return constructedUrl
-      })()
+    ? `${API_BASE}/uploads/${documentData.patient_id}/${documentData.document_type}/${documentData.filename.replace(/\.[^/.]+$/, "")}.pdf`
     : undefined
 
   // Load document data
@@ -138,11 +124,9 @@ export default function EditorPage() {
       setError(null)
       try {
         const data = await fetchDocumentDetail(documentId)
-        console.log("Raw document data:", data)
         
         // Ensure data exists
         if (!data) {
-          console.warn("No document data found")
           setDocumentData(null)
           setEntities([])
           return
@@ -151,10 +135,8 @@ export default function EditorPage() {
         // Normalize entities - normalizeEntities can handle both arrays and objects
         // If data.entities is an object (not an array), normalizeEntities will convert it
         const entitiesToNormalize = data.entities !== undefined ? data.entities : []
-        console.log("Raw entities before normalization:", entitiesToNormalize)
         // normalizeEntities handles the case where input is not an array
         const normalized = normalizeEntities(entitiesToNormalize)
-        console.log("Normalized entities:", normalized)
         setDocumentData(data)
         setEntities(normalized)
       } catch (err: any) {
@@ -218,10 +200,7 @@ export default function EditorPage() {
 
   // Normalize entity data to ensure consistent structure
   const normalizeEntities = (entities: any): Entity[] => {
-    console.log("normalizeEntities called with:", entities)
-    
     if (!Array.isArray(entities)) {
-      console.warn("entities is not an array:", entities)
       // Se entities non è un array, potrebbe essere un oggetto con molte chiavi
       // Convertiamolo in un array di entità
       if (entities && typeof entities === 'object' && entities !== null) {
@@ -240,11 +219,8 @@ export default function EditorPage() {
     }
     
     return entities.map((entity, index) => {
-      console.log(`Processing entity ${index}:`, entity)
-      
       // Handle null/undefined entities
       if (!entity || typeof entity !== 'object') {
-        console.warn(`Entity ${index} is invalid:`, entity)
         return {
           id: `entity-${index}`,
           type: "Entità Invalida",
@@ -255,7 +231,6 @@ export default function EditorPage() {
       
       // Se entity.value è un oggetto, convertilo in stringa
       if (entity.value && typeof entity.value === 'object' && !Array.isArray(entity.value)) {
-        console.log(`Entity ${index} has object value, converting...`)
         const valueKeys = Object.keys(entity.value)
         if (valueKeys.length > 0) {
           const valueStrings = valueKeys.map(key => {
@@ -274,7 +249,6 @@ export default function EditorPage() {
       
       // If entity is already in the correct format, ensure value is a string
       if (entity.id && entity.type !== undefined) {
-        console.log(`Entity ${index} is already normalized`)
         return {
           ...entity,
           value: typeof entity.value === 'string' 
@@ -288,7 +262,6 @@ export default function EditorPage() {
       
       // If entity is an object with altezza, bmi, bsa, peso keys, convert it
       if (entity.altezza !== undefined || entity.bmi !== undefined || entity.bsa !== undefined || entity.peso !== undefined) {
-        console.log(`Entity ${index} has physical parameters, converting...`)
         const values = []
         if (entity.altezza !== undefined) values.push(`Altezza: ${entity.altezza}`)
         if (entity.bmi !== undefined) values.push(`BMI: ${entity.bmi}`)
@@ -309,7 +282,6 @@ export default function EditorPage() {
           entity.bicuspide !== undefined || entity.gradiente_max !== undefined || 
           entity.gradiente_med !== undefined || entity.insufficienza !== undefined || 
           entity.stenosi !== undefined) {
-        console.log(`Entity ${index} has cardiac parameters, converting...`)
         const values = []
         if (entity.AVA !== undefined) values.push(`AVA: ${entity.AVA}`)
         if (entity.AVAi !== undefined) values.push(`AVAi: ${entity.AVAi}`)
@@ -330,9 +302,6 @@ export default function EditorPage() {
       }
       
       // Fallback for any other object structure
-      console.log(`Entity ${index} using fallback conversion`)
-      console.log(`Entity ${index} keys:`, Object.keys(entity))
-      
       // If it's an object with multiple keys, convert all keys to readable format
       if (typeof entity === 'object' && entity !== null && !Array.isArray(entity)) {
         const keys = Object.keys(entity)
