@@ -58,9 +58,7 @@ export default function EditorPage() {
 
   // Compute PDF URL
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
-  // Usa pdf_path se disponibile, altrimenti costruisci il percorso
-  // Se pdf_path è già un URL completo (inizia con http:// o https://), usalo direttamente
-  // Se pdf_path contiene un dominio (es. clinicalaiclinicalfolders-production.up.railway.app), aggiungi https://
+  
   const pdfUrl = documentData?.pdf_path 
     ? (() => {
         const path = documentData.pdf_path.trim()
@@ -68,18 +66,12 @@ export default function EditorPage() {
         if (path.startsWith('http://') || path.startsWith('https://')) {
           return path
         }
-        // Se contiene un dominio (contiene punti e non inizia con /), aggiungi https://
-        if (path.includes('.') && !path.startsWith('/') && !path.startsWith('./')) {
-          // Verifica se sembra un dominio (contiene almeno un punto e non è un percorso relativo)
-          const looksLikeDomain = /^[a-zA-Z0-9][a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(path.split('/')[0])
-          if (looksLikeDomain) {
-            return `https://${path}`
-          }
+        // Se non inizia con /, probabilmente è un dominio senza protocollo - aggiungi https://
+        if (!path.startsWith('/')) {
+          return `https://${path}`
         }
         // Altrimenti è un percorso relativo, aggiungi API_BASE
-        // Assicurati che il percorso inizi con / se non c'è già
-        const normalizedPath = path.startsWith('/') ? path : `/${path}`
-        return `${API_BASE}${normalizedPath}`
+        return `${API_BASE}${path}`
       })()
     : documentData 
     ? `${API_BASE}/uploads/${documentData.patient_id}/${documentData.document_type}/${documentData.filename.replace(/\.[^/.]+$/, "")}.pdf`
