@@ -59,8 +59,11 @@ export default function EditorPage() {
   // Compute PDF URL
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
   // Usa pdf_path se disponibile, altrimenti costruisci il percorso
+  // Se pdf_path è già un URL completo (inizia con http:// o https://), usalo direttamente
   const pdfUrl = documentData?.pdf_path 
-    ? `${API_BASE}${documentData.pdf_path}`
+    ? (documentData.pdf_path.startsWith('http://') || documentData.pdf_path.startsWith('https://'))
+      ? documentData.pdf_path
+      : `${API_BASE}${documentData.pdf_path}`
     : documentData 
     ? `${API_BASE}/uploads/${documentData.patient_id}/${documentData.document_type}/${documentData.filename.replace(/\.[^/.]+$/, "")}.pdf`
     : undefined
