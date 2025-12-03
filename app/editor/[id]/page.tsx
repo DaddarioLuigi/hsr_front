@@ -74,23 +74,20 @@ export default function EditorPage() {
         const data = await fetchDocumentDetail(documentId)
         console.log("Raw document data:", data)
         
-        // Ensure data.entities exists and is an array
-        if (!data || !data.entities) {
-          console.warn("No entities found in document data")
-          setDocumentData(data)
+        // Ensure data exists
+        if (!data) {
+          console.warn("No document data found")
+          setDocumentData(null)
           setEntities([])
           return
         }
         
-        if (!Array.isArray(data.entities)) {
-          console.warn("entities is not an array:", data.entities)
-          setDocumentData(data)
-          setEntities([])
-          return
-        }
-        
-        console.log("Raw entities before normalization:", data.entities)
-        const normalized = normalizeEntities(data.entities)
+        // Normalize entities - normalizeEntities can handle both arrays and objects
+        // If data.entities is an object (not an array), normalizeEntities will convert it
+        const entitiesToNormalize = data.entities !== undefined ? data.entities : []
+        console.log("Raw entities before normalization:", entitiesToNormalize)
+        // normalizeEntities handles the case where input is not an array
+        const normalized = normalizeEntities(entitiesToNormalize)
         console.log("Normalized entities:", normalized)
         setDocumentData(data)
         setEntities(normalized)
@@ -154,11 +151,25 @@ export default function EditorPage() {
       : "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
 
   // Normalize entity data to ensure consistent structure
-  const normalizeEntities = (entities: any[]): Entity[] => {
+  const normalizeEntities = (entities: any): Entity[] => {
     console.log("normalizeEntities called with:", entities)
     
     if (!Array.isArray(entities)) {
       console.warn("entities is not an array:", entities)
+      // Se entities non è un array, potrebbe essere un oggetto con molte chiavi
+      // Convertiamolo in un array di entità
+      if (entities && typeof entities === 'object' && entities !== null) {
+        const keys = Object.keys(entities)
+        if (keys.length > 0) {
+          // Crea un'entità per ogni chiave
+          return keys.map((key, index) => ({
+            id: `entity-${index}`,
+            type: key,
+            value: typeof entities[key] === 'string' ? entities[key] : String(entities[key]),
+            confidence: 1.0
+          }))
+        }
+      }
       return []
     }
     
@@ -176,10 +187,37 @@ export default function EditorPage() {
         }
       }
       
-      // If entity is already in the correct format, return as is
-      if (entity.id && entity.type && entity.value !== undefined && entity.confidence !== undefined) {
+      // Se entity.value è un oggetto, convertilo in stringa
+      if (entity.value && typeof entity.value === 'object' && !Array.isArray(entity.value)) {
+        console.log(`Entity ${index} has object value, converting...`)
+        const valueKeys = Object.keys(entity.value)
+        if (valueKeys.length > 0) {
+          const valueStrings = valueKeys.map(key => {
+            const val = entity.value[key]
+            return `${key}: ${val !== null && val !== undefined ? String(val) : 'N/A'}`
+          })
+          return {
+            id: entity.id || `entity-${index}`,
+            type: entity.type || "Parametri Medici",
+            value: valueStrings.join(", "),
+            confidence: entity.confidence || 1.0,
+            position: entity.position || null
+          }
+        }
+      }
+      
+      // If entity is already in the correct format, ensure value is a string
+      if (entity.id && entity.type !== undefined) {
         console.log(`Entity ${index} is already normalized`)
-        return entity as Entity
+        return {
+          ...entity,
+          value: typeof entity.value === 'string' 
+            ? entity.value 
+            : entity.value !== null && entity.value !== undefined 
+              ? String(entity.value) 
+              : "N/A",
+          confidence: entity.confidence || 1.0
+        } as Entity
       }
       
       // If entity is an object with altezza, bmi, bsa, peso keys, convert it
@@ -195,7 +233,8 @@ export default function EditorPage() {
           id: entity.id || `entity-${index}`,
           type: "Parametri Fisici",
           value: values.join(", "),
-          confidence: entity.confidence || 1.0
+          confidence: entity.confidence || 1.0,
+          position: entity.position || null
         }
       }
       
@@ -219,7 +258,8 @@ export default function EditorPage() {
           id: entity.id || `entity-${index}`,
           type: "Parametri Cardiaci",
           value: values.join(", "),
-          confidence: entity.confidence || 1.0
+          confidence: entity.confidence || 1.0,
+          position: entity.position || null
         }
       }
       
@@ -230,19 +270,24 @@ export default function EditorPage() {
       // If it's an object with multiple keys, convert all keys to readable format
       if (typeof entity === 'object' && entity !== null && !Array.isArray(entity)) {
         const keys = Object.keys(entity)
-        if (keys.length > 0) {
-          const values = keys.map(key => {
+        // Escludi chiavi speciali che non sono valori
+        const excludedKeys = ['id', 'type', 'confidence', 'position', 'value']
+        const valueKeys = keys.filter(key => !excludedKeys.includes(key))
+        
+        if (valueKeys.length > 0) {
+          const values = valueKeys.map(key => {
             const value = entity[key]
             // Convert camelCase to readable format
             const readableKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
-            return `${readableKey}: ${value}`
+            return `${readableKey}: ${value !== null && value !== undefined ? String(value) : 'N/A'}`
           })
           
           return {
             id: entity.id || `entity-${index}`,
             type: entity.type || "Parametri Medici",
             value: values.join(", "),
-            confidence: entity.confidence || 1.0
+            confidence: entity.confidence || 1.0,
+            position: entity.position || null
           }
         }
       }
@@ -250,8 +295,13 @@ export default function EditorPage() {
       return {
         id: entity.id || `entity-${index}`,
         type: entity.type || "Entità",
-        value: typeof entity.value === 'string' ? entity.value : JSON.stringify(entity.value),
-        confidence: entity.confidence || 1.0
+        value: typeof entity.value === 'string' 
+          ? entity.value 
+          : entity.value !== null && entity.value !== undefined 
+            ? String(entity.value) 
+            : "N/A",
+        confidence: entity.confidence || 1.0,
+        position: entity.position || null
       }
     })
   }
@@ -418,7 +468,13 @@ export default function EditorPage() {
                           <div className="flex items-center justify-between">
                             <div>
                               <Label className="font-medium">{ent.type || "Entità"}</Label>
-                              <p className="text-muted-foreground">{ent.value || "N/A"}</p>
+                              <p className="text-muted-foreground">
+                                {typeof ent.value === 'string' 
+                                  ? ent.value 
+                                  : ent.value !== null && ent.value !== undefined 
+                                    ? String(ent.value) 
+                                    : "N/A"}
+                              </p>
                             </div>
                             <div className="flex items-center gap-1">
                               <Badge variant="secondary" className={getConfidenceColor(ent.confidence || 1.0)}>{Math.round((ent.confidence || 1.0) * 100)}%</Badge>

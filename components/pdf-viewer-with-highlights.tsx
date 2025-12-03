@@ -320,7 +320,7 @@ export function PDFViewerWithHighlights({
                         pointerEvents: "auto",
                         display: baseStyle.display || "block"
                       }}
-                      title={`${entity.type}: ${entity.value}`}
+                      title={`${entity.type || "Entità"}: ${typeof entity.value === 'string' ? entity.value : entity.value !== null && entity.value !== undefined ? String(entity.value) : "N/A"}`}
                     />
                   )
                 })}
@@ -356,8 +356,14 @@ export function PDFViewerWithHighlights({
                     : "bg-gray-50 border-gray-200 hover:bg-gray-100 hover:border-gray-300"
                 }`}
               >
-                <div className="font-medium truncate text-gray-900">{entity.type}</div>
-                <div className="text-gray-600 truncate mt-0.5">{entity.value}</div>
+                <div className="font-medium truncate text-gray-900">{entity.type || "Entità"}</div>
+                <div className="text-gray-600 truncate mt-0.5">
+                  {typeof entity.value === 'string' 
+                    ? entity.value 
+                    : entity.value !== null && entity.value !== undefined 
+                      ? String(entity.value) 
+                      : "N/A"}
+                </div>
               </button>
             ))}
           </div>
